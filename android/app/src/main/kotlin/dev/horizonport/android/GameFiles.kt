@@ -51,17 +51,34 @@ object GameFiles {
         File(dir(context), "last-exit.txt").delete()
     }
 
-    /** The end of the newest log, for a run that ended badly. */
+    /**
+     * The end of the game's logs, its newest crash report and what the system logged for the
+     * app, for a run that ended badly.
+     */
     fun logTail(context: Context, lines: Int = 60): String {
-        val logs = File(dir(context), "logs")
-        val parts = listOf("latest.log", "android-output.log").mapNotNull { name ->
-            val file = File(logs, name)
-            if (!file.isFile) return@mapNotNull null
+        val root = dir(context)
+        val logs = File(root, "logs")
+        val files = listOf(File(logs, "latest.log"), File(logs, "android-output.log")) +
+            listOfNotNull(File(root, "crash-reports").listFiles()?.maxByOrNull { it.lastModified() })
+        val parts = files.filter { it.isFile }.map { file ->
             val tail = file.useLines { it.toList().takeLast(lines) }.joinToString("\n")
-            "== $name ==\n$tail"
+            "== ${file.name} ==\n$tail"
         }
-        return parts.joinToString("\n\n")
+        return (parts + listOfNotNull(systemLog(lines))).joinToString("\n\n")
     }
+
+    /**
+     * The system's log for this app (both of its processes): where a crash in native code, a
+     * driver's for one, leaves its only trace.
+     */
+    private fun systemLog(lines: Int): String? = runCatching {
+        val process = ProcessBuilder("logcat", "-d", "-t", (lines * 4).toString(), "-v", "brief")
+            .redirectErrorStream(true)
+            .start()
+        val text = process.inputStream.bufferedReader().use { it.readText() }
+        process.waitFor()
+        text.trim().takeIf { it.isNotEmpty() }?.let { "== logcat ==\n$it" }
+    }.getOrNull()
 
     /** `key:value` lines of options.txt, the others untouched. */
     fun readOption(context: Context, key: String): String? =
