@@ -42,7 +42,12 @@ echo no | "$sdk/cmdline-tools/latest/bin/avdmanager" create avd --force --name h
     -gpu swiftshader_indirect -memory 4096 -cores 2 > "$out/emulator.log" 2>&1 &
 emulator=$!
 trap 'kill $emulator 2> /dev/null' EXIT
-"$adb" wait-for-device
+# An emulator that never came up must not hold the job until it times out.
+if ! timeout 300 "$adb" wait-for-device; then
+    echo "FAILED: the emulator did not start"
+    tail -n 80 "$out/emulator.log"
+    exit 1
+fi
 booted=0
 for _ in $(seq 120); do
     if [ "$("$adb" shell getprop sys.boot_completed 2> /dev/null | tr -d '\r')" = 1 ]; then
@@ -59,7 +64,7 @@ fi
 # The game's activity is not exported: only root may start it directly.
 "$adb" root > /dev/null
 sleep 3
-"$adb" wait-for-device
+timeout 120 "$adb" wait-for-device || { echo "FAILED: the emulator is gone after adb root"; exit 1; }
 "$adb" shell input keyevent KEYCODE_WAKEUP
 "$adb" shell wm dismiss-keyguard
 
