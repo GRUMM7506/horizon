@@ -114,12 +114,14 @@ echo "--- logcat: the game's tag, crashes"
 grep -E " Horizon *:|FATAL EXCEPTION|Fatal signal|AndroidRuntime: |libhorizon_android|GameActivity" "$out/logcat.txt" | tail -n 120
 echo "--- last-exit.txt: $(cat "$out/last-exit.txt")"
 
+# The game's log is a file, or its standard error when the file could not be had.
+cat "$out/latest.log" "$out/android-output.log" > "$out/all.log"
 grep -q "thread stack 136 MiB" "$out/android-output.log" ||
     fail "the game's thread did not get its stack (android-output.log)"
-grep -q "the activity stopped" "$out/latest.log" ||
-    fail "the game never heard its activity stop (latest.log)"
-grep -q "the activity is back" "$out/latest.log" ||
-    fail "the game never got its window back (latest.log)"
+grep -q "the activity stopped" "$out/all.log" ||
+    fail "the game never heard its activity stop"
+grep -q "the activity is back" "$out/all.log" ||
+    fail "the game never got its window back"
 grep -qE "Fatal signal|FATAL EXCEPTION" "$out/logcat.txt" && grep -E "Fatal signal|FATAL EXCEPTION" -A 30 "$out/logcat.txt" | grep -q "$package" &&
     fail "a crash of the app is in logcat"
 
