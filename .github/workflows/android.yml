@@ -1,0 +1,93 @@
+name: android
+# The Android port (docs/android-port.md): builds the game's library for arm64-v8a with cargo-ndk, then the
+# launcher in android/ with Gradle, and keeps the debug APK as an artifact. The APK is signed with the debug key
+# kept in android/debug.keystore, the same for every build, so a new one installs over the old one and the game's
+# folder on the phone stays. It holds no secrets and ships no file of Minecraft's: the player brings the prepared
+# resources themselves.
+on:
+  push:
+    branches: [android-port]
+  pull_request:
+    paths:
+      - 'android/**'
+      - 'crates/horizon-android/**'
+      - '.github/workflows/android.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  NDK_VERSION: 27.2.12479018
+  # Android 8.0, the launcher's minSdk.
+  ANDROID_API: 26
+  GRADLE_VERSION: 8.14.3
+  GRADLE_SHA256: bd71102213493060956ec229d946beee57158dbd89d0e62b91bca0fa2c5f3531
+jobs:
+  apk:
+    runs-on: ubuntu-24.04
+    # A cold build of the whole game with thin LTO; a cached one is a fraction of it.
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Free disk space
+        # The game's release build for one more target needs more than the runner leaves free.
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/share/swift /opt/hostedtoolcache/CodeQL
+          df -h /
+      - id: rust
+        run: echo "version=$(cat tools/ci/rust-version)" >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable, 2026-11
+        with:
+          toolchain: ${{ steps.rust.outputs.version }}
+          targets: aarch64-linux-android
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          shared-key: android-arm64
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Android SDK and NDK
+        # The runner image carries the SDK and its sdkmanager; the port pins the rest.
+        run: |
+          sdkmanager="${ANDROID_HOME:?the runner has no Android SDK}/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$sdkmanager" --licenses > /dev/null || true
+          "$sdkmanager" "platforms;android-35" "build-tools;35.0.0" "ndk;${NDK_VERSION}"
+          echo "ANDROID_NDK_HOME=${ANDROID_HOME}/ndk/${NDK_VERSION}" >> "$GITHUB_ENV"
+      - name: cargo-ndk
+        run: cargo install cargo-ndk --version 4.1.2 --locked
+      - name: The engine builds for Android
+        # The client crate on its own, as docs/android-port.md promises.
+        run: cargo ndk -t arm64-v8a --platform "$ANDROID_API" check --locked -p horizon-client
+      - name: Build the game's library
+        run: |
+          cargo ndk -t arm64-v8a --platform "$ANDROID_API" -o android/app/src/main/jniLibs \
+            build --locked -p horizon-android --release
+          ls -l android/app/src/main/jniLibs/arm64-v8a/
+      - name: Gradle
+        # The version android/ is written for, checked against its published checksum: the repository keeps no
+        # wrapper jar (tools/check_public_tree.py refuses every jar).
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/gradle.zip" "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip"
+          echo "${GRADLE_SHA256}  $RUNNER_TEMP/gradle.zip" | sha256sum -c -
+          unzip -q "$RUNNER_TEMP/gradle.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/gradle-${GRADLE_VERSION}/bin" >> "$GITHUB_PATH"
+      - name: Build the APK
+        working-directory: android
+        run: gradle --no-daemon :app:assembleDebug
+      - name: Check the APK
+        run: |
+          apk=android/app/build/outputs/apk/debug/app-debug.apk
+          "${ANDROID_HOME}/build-tools/35.0.0/apksigner" verify --print-certs "$apk"
+          unzip -l "$apk" | grep -E 'lib/arm64-v8a/libhorizon_android\.so'
+          cp "$apk" horizon-android-debug.apk
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: horizon-android-debug-apk
+          path: horizon-android-debug.apk
+          if-no-files-found: error
+          retention-days: 30
