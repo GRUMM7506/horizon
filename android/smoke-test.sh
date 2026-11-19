@@ -16,8 +16,13 @@ image=${SMOKE_IMAGE:-system-images;android-34;default;x86_64}
 package=dev.horizonport.android
 folder=/storage/emulated/0/Android/data/$package/files/horizon
 sdk=${ANDROID_HOME:?ANDROID_HOME is not set}
-adb=$sdk/platform-tools/adb
+adb_tool=$sdk/platform-tools/adb
 failed=0
+
+# No command to the emulator may hold the job: each one has a minute, the install five.
+adb() {
+    timeout "${ADB_TIMEOUT:-60}" "$adb_tool" "$@"
+}
 
 mkdir -p "$out"
 fail() {
@@ -26,13 +31,14 @@ fail() {
 }
 alive() {
     # The game's own process, beside the launcher's.
-    "$adb" shell pidof "$package:game" > /dev/null 2>&1
+    adb shell pidof "$package:game" > /dev/null 2>&1
 }
 shot() {
-    "$adb" exec-out screencap -p > "$out/$1.png" 2> /dev/null || true
+    adb exec-out screencap -p > "$out/$1.png" 2> /dev/null || true
+    echo "screenshot $1: $(wc -c < "$out/$1.png") bytes"
 }
 game_log() {
-    "$adb" shell "cat $folder/logs/$1" 2> /dev/null
+    adb shell "cat $folder/logs/$1" 2> /dev/null
 }
 
 echo "== Starting the emulator"
@@ -43,14 +49,14 @@ echo no | "$sdk/cmdline-tools/latest/bin/avdmanager" create avd --force --name h
 emulator=$!
 trap 'kill $emulator 2> /dev/null' EXIT
 # An emulator that never came up must not hold the job until it times out.
-if ! timeout 300 "$adb" wait-for-device; then
+if ! ADB_TIMEOUT=300 adb wait-for-device; then
     echo "FAILED: the emulator did not start"
     tail -n 80 "$out/emulator.log"
     exit 1
 fi
 booted=0
 for _ in $(seq 120); do
-    if [ "$("$adb" shell getprop sys.boot_completed 2> /dev/null | tr -d '\r')" = 1 ]; then
+    if [ "$(adb shell getprop sys.boot_completed 2> /dev/null | tr -d '\r')" = 1 ]; then
         booted=1
         break
     fi
@@ -62,55 +68,55 @@ if [ $booted != 1 ]; then
     exit 1
 fi
 # The game's activity is not exported: only root may start it directly.
-"$adb" root > /dev/null
+adb root > /dev/null
 sleep 3
-timeout 120 "$adb" wait-for-device || { echo "FAILED: the emulator is gone after adb root"; exit 1; }
-"$adb" shell input keyevent KEYCODE_WAKEUP
-"$adb" shell wm dismiss-keyguard
+ADB_TIMEOUT=120 adb wait-for-device || { echo "FAILED: the emulator is gone after adb root"; exit 1; }
+adb shell input keyevent KEYCODE_WAKEUP
+adb shell wm dismiss-keyguard
 
 echo "== Installing"
-"$adb" install -r "$apk" || { echo "FAILED: the APK did not install"; exit 1; }
+ADB_TIMEOUT=300 adb install -r "$apk" || { echo "FAILED: the APK did not install"; exit 1; }
 # The launcher makes the game's folder, as on a phone.
-"$adb" shell am start -W -n "$package/.LauncherActivity" > /dev/null
+adb shell am start -n "$package/.LauncherActivity" > /dev/null
 sleep 8
 shot 1-launcher
-"$adb" logcat -c
+adb logcat -c
 
 echo "== Starting the game (no resources: its missing-resources screen)"
-"$adb" shell am start -W -n "$package/.HorizonActivity" \
+adb shell am start -n "$package/.HorizonActivity" \
     --esa args "--game-dir,$folder,--home,$folder,--resources,$folder/none,--name,Smoke" > /dev/null
 sleep 60
 shot 2-game
 alive || fail "the game's process is gone after starting"
 
 echo "== Touching the screen"
-"$adb" shell input tap 300 300
-"$adb" shell input swipe 400 400 800 500 300
+adb shell input tap 300 300
+adb shell input swipe 400 400 800 500 300
 sleep 3
 alive || fail "the game's process is gone after touches"
 
 echo "== Leaving the game (Home) and coming back"
-"$adb" shell input keyevent KEYCODE_HOME
+adb shell input keyevent KEYCODE_HOME
 sleep 10
 alive || fail "the game's process is gone after Home"
-"$adb" shell monkey -p "$package" -c android.intent.category.LAUNCHER 1 > /dev/null 2>&1
+adb shell monkey -p "$package" -c android.intent.category.LAUNCHER 1 > /dev/null 2>&1
 sleep 15
 shot 3-back
 alive || fail "the game's process is gone after coming back"
 
 echo "== Once more"
-"$adb" shell input keyevent KEYCODE_HOME
+adb shell input keyevent KEYCODE_HOME
 sleep 6
-"$adb" shell monkey -p "$package" -c android.intent.category.LAUNCHER 1 > /dev/null 2>&1
+adb shell monkey -p "$package" -c android.intent.category.LAUNCHER 1 > /dev/null 2>&1
 sleep 10
 shot 4-back-again
 alive || fail "the game's process is gone after the second return"
 
 echo "== Logs"
-"$adb" logcat -d > "$out/logcat.txt" 2>&1
+adb logcat -d > "$out/logcat.txt" 2>&1
 game_log android-output.log > "$out/android-output.log"
 game_log latest.log > "$out/latest.log"
-"$adb" shell "cat $folder/last-exit.txt" > "$out/last-exit.txt" 2> /dev/null
+adb shell "cat $folder/last-exit.txt" > "$out/last-exit.txt" 2> /dev/null
 echo "--- android-output.log"
 cat "$out/android-output.log"
 echo "--- latest.log (the end)"
