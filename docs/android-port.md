@@ -95,8 +95,8 @@ winit на Android с GameActivity не передаёт текст экранн
 | `crates/horizon-client-input/src/android.rs` | Что активность и игра передают друг другу: `AndroidApp` для цикла событий, очередь событий (текст клавиатуры, мышь), запросы игры (показать клавиатуру, захватить мышь). Только `cfg(target_os = "android")` |
 | `crates/horizon-client-input/src/touch_pointer.rs` | Палец как указатель мыши в меню: тап, удержание, перетаскивание, прокрутка. Чистая логика с тестами, собирается везде |
 | `crates/horizon-client/src/game/interface/android_input.rs` | Склейка с игрой: касания, опрос моста, отрисовка сенсорных кнопок, сворачивание и возврат. Только Android |
-| `android/` | Лаунчер на Kotlin (Gradle): `LauncherActivity`, `HorizonActivity` (наследник `GameActivity`), импорт zip, настройки |
-| `.github/workflows/android.yml` | Сборка debug-APK |
+| `android/` | Лаунчер на Kotlin (Gradle): `LauncherActivity`, `HorizonActivity` (наследник `GameActivity`), импорт zip, настройки; `smoke-test.sh` |
+| `.github/workflows/android.yml` | Сборка debug-APK и дымовой тест на эмуляторе |
 
 Правки существующих файлов апстрима (все либо за `cfg(target_os = "android")`, либо не меняют поведение на
 десктопе):
@@ -109,6 +109,7 @@ winit на Android с GameActivity не передаёт текст экранн
 | `.../horizon-client-input/src/keybinds.rs`, `game/runtime/window_handler.rs` | Расширения winit `scancode` и `modifier_supplement` обойдены на Android |
 | `.../horizon-client-input/src/window.rs` | `event_loop()`: на Android цикл событий создаётся с `AndroidApp`; три места в `game/runtime/` зовут её вместо `EventLoop::new()` |
 | `crates/horizon-guest-stack/src/lib.rs` | Проверка стека потока на Android та же, что на Linux |
+| `crates/horizon-dualsense/` | Путь «без hidapi», который апстрим сделал для iOS, распространён на Android (его `build.rs` ищет `libudev` через pkg-config). Механическая замена `target_os = "ios"` на `any(ios, android)` |
 | `crates/horizon-client/src/entry.rs`, `crates/horizon-game/src/lib.rs` | `prepare_android` и `main_android`: аргументы от лаунчера, без holder-процесса |
 | `crates/horizon-client-render/src/gfx.rs` | `Renderer::window_lost` и `window_restored`, поле `window_gone` |
 | `crates/horizon-client-render/src/audio.rs` | `Audio::output_suspended` и `output_resumed` (пауза потока cpal) |
@@ -214,8 +215,17 @@ APK подписан отладочным ключом из `android/debug.keyst
 телефоне (ресурсы и сохранения, которые система удаляет вместе с приложением) остаётся. Он ничего не защищает;
 для публикации нужен свой.
 
-**CI.** `.github/workflows/android.yml` на каждый push в `android-port` собирает библиотеку и APK и выкладывает
-артефакт `horizon-android-debug-apk`.
+**CI.** `.github/workflows/android.yml` на каждый push в `android-port`:
+
+- задача `apk` собирает библиотеку и APK и выкладывает артефакт `horizon-android-debug-apk`;
+- задача `emulator` собирает ту же библиотеку под x86_64 и гоняет `android/smoke-test.sh` на эмуляторе с
+  программным Vulkan: игра стартует без ресурсов (её экран «нет ресурсов», то есть собственное окно, рендерер и
+  цикл событий движка), получает касания, дважды уходит по «Домой» и возвращается. Тест проверяет, что поток
+  получил стек 136 МиБ, что игра услышала остановку активности и получила окно обратно, и что процесс всё это
+  пережил. Логи и скриншоты лежат в артефакте `horizon-android-smoke-test`. Настоящий GPU и саму игру он не
+  проверяет.
+
+Собрать APK для эмулятора локально: `cargo ndk -t x86_64 ...` и `gradle :app:assembleDebug -Phorizon.abi=x86_64`.
 
 ## 5. Установка
 
@@ -255,8 +265,10 @@ APK подписан отладочным ключом из `android/debug.keyst
 
 ## 7. Что не проверено без реального устройства
 
-В песочнице нет ни устройства, ни эмулятора с аппаратным ускорением, поэтому проверено только то, что собирается
-и линкуется (и модульные тесты логики указателя). Всё ниже нужно пройти на телефоне. Логи: `adb logcat -s Horizon`
+В песочнице нет ни устройства, ни эмулятора с аппаратным ускорением, поэтому локально проверено только то, что
+собирается и линкуется (и модульные тесты логики указателя); запуск до экрана «нет ресурсов» и сворачивание
+проверяет дымовой тест в CI на эмуляторе, но это программный Vulkan и без игровых ресурсов. Всё ниже нужно
+пройти на телефоне. Логи: `adb logcat -s Horizon`
 и файлы `logs/latest.log`, `logs/android-output.log` в папке игры; кнопка «Поделиться логом» в лаунчере
 отправляет их хвост.
 

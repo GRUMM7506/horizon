@@ -13,7 +13,8 @@
 
 ## Этап 2. Сборка: готово
 
-- `cargo ndk -t arm64-v8a build -p horizon-client` проходит (rlib).
+- `cargo ndk -t arm64-v8a build -p horizon-client` проходит (rlib), в том числе с фичами по умолчанию: для
+  этого `horizon-dualsense` на Android собирается без `hidapi`, как уже было сделано в апстриме для iOS.
 - Новый крейт `crates/horizon-android`: `cdylib` с `android_main` (android-activity, GameActivity).
   `libhorizon_android.so` собирается и линкуется; проверено, что экспортированы `android_main`,
   `GameActivity_onCreate`, JNI-функции моста, сегменты выровнены на 16 КБ.
@@ -57,9 +58,11 @@
 
 ## Этап 8. CI: готово
 
-- `.github/workflows/android.yml`: библиотека через cargo-ndk, APK через Gradle, артефакт
+- `.github/workflows/android.yml`, задача `apk`: библиотека через cargo-ndk, APK через Gradle, артефакт
   `horizon-android-debug-apk`. APK подписан общим отладочным ключом из репозитория, чтобы обновление ставилось
   поверх и не стирало папку игры.
+- Задача `emulator`: дымовой тест на x86_64-эмуляторе (`android/smoke-test.sh`): запуск до экрана «нет
+  ресурсов», касания, два ухода по «Домой» с возвратом.
 
 ## Что осталось за вами
 
