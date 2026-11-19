@@ -40,6 +40,14 @@ shot() {
 game_log() {
     adb shell "cat $folder/logs/$1" 2> /dev/null
 }
+# The app's icon, as a player taps it: starts the launcher, or brings the app's task back
+# with whatever is on top of it.
+tap_icon() {
+    adb shell monkey -p "$package" -c android.intent.category.LAUNCHER 1 > /dev/null 2>&1
+}
+on_top() {
+    echo "on top: $(adb shell dumpsys activity activities | grep -E 'topResumedActivity|ResumedActivity' | head -n 2 | tr -s ' ' | tr '\n' ';')"
+}
 
 echo "== Starting the emulator"
 # One folder for both tools: avdmanager would follow XDG_CONFIG_HOME where it is set, and the
@@ -82,9 +90,10 @@ adb shell wm dismiss-keyguard
 echo "== Installing"
 ADB_TIMEOUT=300 adb install -r "$apk" || { echo "FAILED: the APK did not install"; exit 1; }
 # The launcher makes the game's folder, as on a phone.
-adb shell am start -n "$package/.LauncherActivity" > /dev/null
+tap_icon
 sleep 8
 shot 1-launcher
+on_top
 adb logcat -c
 
 echo "== Starting the game (no resources: its missing-resources screen)"
@@ -92,6 +101,7 @@ adb shell am start -n "$package/.HorizonActivity" \
     --esa args "--game-dir,$folder,--home,$folder,--resources,$folder/none,--name,Smoke" > /dev/null
 sleep 60
 shot 2-game
+on_top
 alive || fail "the game's process is gone after starting"
 
 echo "== Touching the screen"
@@ -104,17 +114,20 @@ echo "== Leaving the game (Home) and coming back"
 adb shell input keyevent KEYCODE_HOME
 sleep 10
 alive || fail "the game's process is gone after Home"
-adb shell monkey -p "$package" -c android.intent.category.LAUNCHER 1 > /dev/null 2>&1
+on_top
+tap_icon
 sleep 15
 shot 3-back
+on_top
 alive || fail "the game's process is gone after coming back"
 
 echo "== Once more"
 adb shell input keyevent KEYCODE_HOME
 sleep 6
-adb shell monkey -p "$package" -c android.intent.category.LAUNCHER 1 > /dev/null 2>&1
+tap_icon
 sleep 10
 shot 4-back-again
+on_top
 alive || fail "the game's process is gone after the second return"
 
 echo "== Logs"
@@ -138,6 +151,8 @@ grep -q "the activity stopped" "$out/all.log" ||
     fail "the game never heard its activity stop"
 grep -q "the activity is back" "$out/all.log" ||
     fail "the game never got its window back"
+# Shared storage has no file locks; the game must have its log file all the same.
+[ -s "$out/latest.log" ] || fail "the game wrote no logs/latest.log"
 grep -qE "Fatal signal|FATAL EXCEPTION" "$out/logcat.txt" && grep -E "Fatal signal|FATAL EXCEPTION" -A 30 "$out/logcat.txt" | grep -q "$package" &&
     fail "a crash of the app is in logcat"
 

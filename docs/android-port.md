@@ -91,7 +91,7 @@ winit на Android с GameActivity не передаёт текст экранн
 
 | Путь | Что это |
 |---|---|
-| `crates/horizon-android/` | `cdylib` `libhorizon_android.so`: `android_main`, JNI-мост (`bridge.rs`), стек игрового потока (`stack.rs`), вывод stdout/stderr в logcat и файл (`output.rs`). На остальных платформах крейт пустой |
+| `crates/horizon-android/` | `cdylib` `libhorizon_android.so`: `android_main`, JNI-мост (`bridge.rs`), стек игрового потока (`stack.rs`), блокировки файлов на хранилище без них (`locks.rs`), вывод stdout/stderr в logcat и файл (`output.rs`). На остальных платформах крейт пустой |
 | `crates/horizon-client-input/src/android.rs` | Что активность и игра передают друг другу: `AndroidApp` для цикла событий, очередь событий (текст клавиатуры, мышь), запросы игры (показать клавиатуру, захватить мышь). Только `cfg(target_os = "android")` |
 | `crates/horizon-client-input/src/touch_pointer.rs` | Палец как указатель мыши в меню: тап, удержание, перетаскивание, прокрутка. Чистая логика с тестами, собирается везде |
 | `crates/horizon-client/src/game/interface/android_input.rs` | Склейка с игрой: касания, опрос моста, отрисовка сенсорных кнопок, сворачивание и возврат. Только Android |
@@ -143,6 +143,12 @@ winit на Android с GameActivity не передаёт текст экранн
 `getExternalFilesDir()/horizon`), `HORIZON_ANDROID_ARGS` (аргументы, по одному на строку), `TMPDIR`, `HOME`,
 настройки сенсорных кнопок. Лаунчер всегда передаёт `--game-dir`, `--home`, `--resources`, `--name` и, если
 задан адрес, `--server`.
+
+**Блокировки файлов.** Папка игры лежит на общем хранилище, которое Android отдаёт через FUSE, и `flock` там
+отвечает ENOSYS (это показал дымовой тест на эмуляторе). Игра блокирует `session.lock` мира, свой лог и кэш
+паков и неудачную блокировку понимает как «занято другим экземпляром», так что ни один мир не открылся бы.
+Библиотека линкуется ещё и с `--wrap=flock` (`locks.rs`): на хранилище без блокировок блокировка считается
+полученной. На устройстве игра одна и в одном процессе, поэтому защищать нечего; в логе об этом одна строка.
 
 **Жизненный цикл.** winit зовёт `resumed`, когда у активности появляется окно, и `suspended`, когда оно
 уходит. Первый `resumed` создаёт окно и рендерер, как на десктопе. `suspended` зовёт `Renderer::window_lost`:

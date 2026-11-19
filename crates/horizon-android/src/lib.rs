@@ -8,6 +8,7 @@
 #![cfg(target_os = "android")]
 
 mod bridge;
+mod locks;
 mod output;
 mod stack;
 
