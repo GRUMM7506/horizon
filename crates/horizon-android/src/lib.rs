@@ -27,9 +27,10 @@ fn android_main(app: AndroidApp) {
     let _ = std::fs::create_dir_all(&dir);
     output::redirect(&dir);
     eprintln!(
-        "Horizon for Android: folder {}, thread stack {} MiB",
+        "Horizon for Android: folder {}, thread stack {} MiB, Android API {}",
         dir.display(),
-        stack::current_size() / (1024 * 1024)
+        stack::current_size() / (1024 * 1024),
+        AndroidApp::sdk_version()
     );
     // One argument per line, as the launcher wrote them.
     let args: Vec<String> = std::env::var("HORIZON_ANDROID_ARGS")
@@ -38,6 +39,14 @@ fn android_main(app: AndroidApp) {
         .filter(|line| !line.is_empty())
         .map(str::to_owned)
         .collect();
+    eprintln!("Horizon for Android: arguments {args:?}");
+    // A panic's message and place, wherever it happens: the game's own crash report comes
+    // later in its start, and only for the threads it knows.
+    let earlier = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        eprintln!("Horizon for Android: {info}");
+        earlier(info);
+    }));
     bridge::install(&app);
     horizon_client_input::android::set_app(app.clone());
     let exit = dir.join(EXIT_FILE);
@@ -51,6 +60,7 @@ fn android_main(app: AndroidApp) {
         }
         Err(_) => "panic\n".to_owned(),
     };
+    eprintln!("Horizon for Android: the game ended: {}", status.trim_end());
     let _ = std::fs::write(&exit, status);
     bridge::finish(&app);
     output::flush();

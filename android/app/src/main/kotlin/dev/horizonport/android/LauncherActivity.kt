@@ -16,6 +16,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
+import androidx.core.content.FileProvider
 import kotlin.concurrent.thread
 
 /**
@@ -43,6 +44,7 @@ class LauncherActivity : AppCompatActivity() {
         findViewById<EditText>(R.id.server).setText(prefs.server)
         findViewById<SwitchCompat>(R.id.under_cutout).isChecked = prefs.underCutout
         findViewById<SwitchCompat>(R.id.tap_to_use).isChecked = prefs.tapToUse
+        findViewById<SwitchCompat>(R.id.log_input).isChecked = prefs.logInput
 
         // Render distance and GUI scale are the game's own options (options.txt), so what the
         // player changes in the game shows here too.
@@ -117,6 +119,7 @@ class LauncherActivity : AppCompatActivity() {
         prefs.buttonOpacity = 10 + value(R.id.button_opacity) * 5
         prefs.underCutout = findViewById<SwitchCompat>(R.id.under_cutout).isChecked
         prefs.tapToUse = findViewById<SwitchCompat>(R.id.tap_to_use).isChecked
+        prefs.logInput = findViewById<SwitchCompat>(R.id.log_input).isChecked
     }
 
     private fun showResources() {
@@ -136,24 +139,21 @@ class LauncherActivity : AppCompatActivity() {
 
     private fun showLastRun() {
         val exit = GameFiles.lastExit(this)
-        val box = findViewById<View>(R.id.last_run)
         val text = findViewById<TextView>(R.id.last_run_text)
-        when {
-            exit == null || exit == "ok" -> box.visibility = View.GONE
-            exit.startsWith("error") -> {
-                text.text = getString(R.string.last_run_error, exit.substringAfter('\n', "").trim())
-                box.visibility = View.VISIBLE
-            }
+        val bad = exit != null && exit != "ok"
+        text.visibility = if (bad) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.dismiss_last_run).visibility = text.visibility
+        text.text = when {
+            !bad -> ""
+            exit!!.startsWith("error") ->
+                getString(R.string.last_run_error, exit.substringAfter('\n', "").trim())
             // "running" (the process died without saying why) or "panic".
-            else -> {
-                text.text = getString(R.string.last_run_crash)
-                box.visibility = View.VISIBLE
-            }
+            else -> getString(R.string.last_run_crash)
         }
     }
 
     private fun showLog() {
-        val log = GameFiles.logTail(this).ifEmpty { getString(R.string.log_empty) }
+        val log = Report.text(this, 80)
         val view = TextView(this).apply {
             text = log
             textSize = 11f
@@ -167,12 +167,21 @@ class LauncherActivity : AppCompatActivity() {
             .show()
     }
 
+    /** The whole report as a file: a messenger or a mail app attaches it. */
     private fun shareLog() {
-        val log = GameFiles.logTail(this, 400).ifEmpty { getString(R.string.log_empty) }
+        val report = runCatching { Report.write(this) }.getOrNull()
         val send = Intent(Intent.ACTION_SEND)
             .setType("text/plain")
             .putExtra(Intent.EXTRA_SUBJECT, getString(R.string.log_subject))
-            .putExtra(Intent.EXTRA_TEXT, log.takeLast(90_000))
+        if (report != null) {
+            val uri = FileProvider.getUriForFile(this, "$packageName.files", report)
+            send.putExtra(Intent.EXTRA_STREAM, uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            send.clipData = android.content.ClipData.newRawUri(Report.FILE, uri)
+            send.putExtra(Intent.EXTRA_TEXT, getString(R.string.report_help))
+        } else {
+            // The folder could not be written: the end of the report as text.
+            send.putExtra(Intent.EXTRA_TEXT, Report.text(this, 300).takeLast(90_000))
+        }
         startActivity(Intent.createChooser(send, getString(R.string.share_log)))
     }
 
@@ -253,6 +262,7 @@ class LauncherActivity : AppCompatActivity() {
             "HORIZON_TOUCH_SCALE=${prefs.buttonScale / 100f}",
             "HORIZON_TOUCH_OPACITY=${prefs.buttonOpacity / 100f}",
             "HORIZON_TOUCH_TAP_USES=${if (prefs.tapToUse) 1 else 0}",
+            "HORIZON_ANDROID_LOG_INPUT=${if (prefs.logInput) 1 else 0}",
         )
         startActivity(
             Intent(this, HorizonActivity::class.java)

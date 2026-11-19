@@ -30,6 +30,17 @@
             </intent-filter>
         </activity>
 
+        <!-- The launcher's report (logs and the device), shared as a file. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
         <!-- The game, in a process of its own that ends with it (docs/android-port.md). Nothing
              recreates it: it follows rotation and keyboards itself. -->
         <activity

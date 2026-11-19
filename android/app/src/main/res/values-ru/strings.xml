@@ -35,13 +35,15 @@
     <string name="try_anyway">Всё равно попробовать</string>
     <string name="close">Закрыть</string>
 
-    <string name="section_last_run">Прошлый запуск</string>
+    <string name="section_last_run">Диагностика</string>
+    <string name="log_input">Подробный лог ввода (каждое касание и клавиша, для отчёта)</string>
+    <string name="report_help">В отчёте: устройство, настройки и конец логов игры. Отправьте его вместе с описанием того, что пошло не так.</string>
     <string name="last_run_error">Игра остановилась с ошибкой:\n%1$s</string>
     <string name="last_run_crash">Игра завершилась неожиданно (сбой, или её закрыла система).</string>
-    <string name="show_log">Показать лог</string>
-    <string name="share_log">Поделиться логом</string>
+    <string name="show_log">Показать отчёт</string>
+    <string name="share_log">Отправить отчёт</string>
     <string name="dismiss">Скрыть</string>
-    <string name="log_title">Лог</string>
+    <string name="log_title">Отчёт</string>
     <string name="log_subject">Horizon для Android: лог</string>
     <string name="log_empty">Лог не записан.</string>
 </resources>

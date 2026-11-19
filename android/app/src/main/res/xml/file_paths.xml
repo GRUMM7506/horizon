@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- What the launcher may hand to another app: the report it writes into the game's folder. -->
+<paths>
+    <external-files-path name="horizon" path="horizon/" />
+    <files-path name="horizon-internal" path="horizon/" />
+</paths>

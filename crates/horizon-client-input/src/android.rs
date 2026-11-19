@@ -71,6 +71,10 @@ pub fn set_keyboard(show: fn(bool)) {
 /// activity only when the answer changes.
 pub fn show_keyboard(show: bool) {
     if KEYBOARD_WANTED.swap(show, Ordering::Relaxed) != show {
+        log::info!(
+            "Horizon: Android keyboard {}",
+            if show { "asked for" } else { "sent away" }
+        );
         KEYBOARD_DISMISSED.store(false, Ordering::Relaxed);
         if let Some(keyboard) = KEYBOARD.get() {
             keyboard(show);
@@ -102,6 +106,10 @@ pub fn set_pointer_capture(capture: fn(bool)) {
 /// Capture a connected mouse while the player looks around with it, release it over a screen.
 pub fn capture_pointer(capture: bool) {
     if POINTER_CAPTURED.swap(capture, Ordering::Relaxed) != capture
+        && {
+            log::debug!("Horizon: Android pointer capture {capture}");
+            true
+        }
         && let Some(pointer) = POINTER_CAPTURE.get()
     {
         pointer(capture);

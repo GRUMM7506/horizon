@@ -36,6 +36,11 @@ class Prefs(context: Context) {
         get() = store.getBoolean("tapToUse", false)
         set(value) = store.edit().putBoolean("tapToUse", value).apply()
 
+    /** Every touch and key goes to the game's log (`HORIZON_ANDROID_LOG_INPUT`). */
+    var logInput: Boolean
+        get() = store.getBoolean("logInput", false)
+        set(value) = store.edit().putBoolean("logInput", value).apply()
+
     companion object {
         /** `Player` names vanilla accepts offline: 3 to 16 of these characters. */
         fun validName(name: String) = Regex("[A-Za-z0-9_]{3,16}").matches(name)

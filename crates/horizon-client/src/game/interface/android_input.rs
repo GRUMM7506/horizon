@@ -80,6 +80,24 @@ thread_local! {
     static INPUT: RefCell<Input> = RefCell::new(Input::new());
 }
 
+/// The launcher's "detailed input log" switch (`HORIZON_ANDROID_LOG_INPUT=1`): every finger,
+/// what it was taken for and what the game was told, in the game's log. For a report from a
+/// phone ("this button does nothing"); off, nothing is formatted.
+fn tracing() -> bool {
+    static ON: std::sync::LazyLock<bool> = std::sync::LazyLock::new(|| {
+        std::env::var("HORIZON_ANDROID_LOG_INPUT").is_ok_and(|v| v == "1")
+    });
+    *ON
+}
+
+macro_rules! trace {
+    ($($arg:tt)*) => {
+        if tracing() {
+            log::info!("Horizon input: {}", format_args!($($arg)*));
+        }
+    };
+}
+
 fn pointer_event(action: Pointer, device_id: DeviceId, scale: f32) -> WindowEvent {
     match action {
         Pointer::Moved([x, y]) => WindowEvent::CursorMoved {
@@ -194,6 +212,17 @@ impl Game<'_> {
             self.android_touch(event_loop, id, touch);
             return None;
         }
+        match &event {
+            WindowEvent::Focused(focused) => log::info!("Horizon: Android window focus {focused}"),
+            WindowEvent::Resized(size) => {
+                log::info!("Horizon: Android window {}x{}", size.width, size.height);
+            }
+            WindowEvent::KeyboardInput { event: key, .. } => trace!(
+                "key {:?} {:?} text {:?}",
+                key.physical_key, key.state, key.text
+            ),
+            _ => {}
+        }
         back_is_escape(&mut event);
         if let WindowEvent::KeyboardInput { event: key, .. } = &event
             && key.physical_key != PhysicalKey::Code(KeyCode::Escape)
@@ -275,6 +304,22 @@ impl Game<'_> {
                 }
             }
         });
+        if touch.phase != TouchPhase::Moved {
+            trace!(
+                "finger {} {:?} at {:.0},{:.0} ({}): {}",
+                touch.id,
+                touch.phase,
+                at[0],
+                at[1],
+                if playing { "world" } else { "screen" },
+                match &step {
+                    Step::Nothing => "touch controls".to_owned(),
+                    Step::Turn(_) => "camera".to_owned(),
+                    Step::Slot(slot) => format!("hotbar slot {slot}"),
+                    Step::Pointer(actions) => format!("pointer {actions:?}"),
+                }
+            );
+        }
         match step {
             Step::Nothing => {}
             Step::Turn(delta) => {
@@ -326,6 +371,12 @@ impl Game<'_> {
             self.handle_window_event(event_loop, id, event, user);
         }
         for event in android::take() {
+            if !matches!(event, Event::MouseMoved(_) | Event::MouseMotion(_)) {
+                trace!(
+                    "from the activity: {event:?} (text field focused: {})",
+                    self.text_field_focused()
+                );
+            }
             let moved = |[x, y]: [f32; 2]| WindowEvent::CursorMoved {
                 device_id,
                 position: winit::dpi::PhysicalPosition::new(f64::from(x), f64::from(y)),
@@ -450,7 +501,25 @@ impl Game<'_> {
             controls.clicked = false;
             state
         });
+        if playing {
+            // What the touch controls hold, when it changes.
+            thread_local! {
+                static LAST: std::cell::Cell<(u32, bool, [bool; 2])> = const { std::cell::Cell::new((0, false, [false; 2])) };
+            }
+            let now = (
+                state.buttons,
+                state.left != [0.0; 2],
+                [state.triggers[0] > 0.0, state.triggers[1] > 0.0],
+            );
+            if tracing() && LAST.replace(now) != now {
+                trace!(
+                    "touch controls: buttons {:#x}, joystick {:?}, use {} attack {}",
+                    state.buttons, state.left, now.2[0], now.2[1]
+                );
+            }
+        }
         for (action, down) in acts {
+            trace!("touch action {action} {}", if down { "down" } else { "up" });
             if let Err(e) = self.pad_action(action, down) {
                 log::warn!("Horizon: touch control {action}: {e}");
             }
@@ -475,6 +544,11 @@ impl Game<'_> {
 
     /// `ApplicationHandler::suspended`: the activity stopped.
     pub(super) fn android_suspended(&mut self) {
+        log::info!(
+            "Horizon: Android suspends the game (title screen: {}, in the world: {})",
+            self.title.is_some(),
+            self.android_playing()
+        );
         window_lost(self.renderer.as_mut());
         self.audio.output_suspended();
     }

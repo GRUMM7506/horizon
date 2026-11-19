@@ -36,13 +36,15 @@
     <string name="try_anyway">Try anyway</string>
     <string name="close">Close</string>
 
-    <string name="section_last_run">Last run</string>
+    <string name="section_last_run">Diagnostics</string>
+    <string name="log_input">Detailed input log (every touch and key, for a report)</string>
+    <string name="report_help">The report holds the device, the settings and the end of the game\'s logs. Send it with a description of what went wrong.</string>
     <string name="last_run_error">The game stopped with an error:\n%1$s</string>
     <string name="last_run_crash">The game ended unexpectedly (a crash, or the system closed it).</string>
-    <string name="show_log">Show the log</string>
-    <string name="share_log">Share the log</string>
+    <string name="show_log">Show the report</string>
+    <string name="share_log">Send the report</string>
     <string name="dismiss">Dismiss</string>
-    <string name="log_title">Log</string>
+    <string name="log_title">Report</string>
     <string name="log_subject">Horizon for Android: log</string>
     <string name="log_empty">No log was written.</string>
 </resources>

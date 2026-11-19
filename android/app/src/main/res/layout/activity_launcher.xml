@@ -23,13 +23,12 @@
             android:layout_height="wrap_content"
             android:textAppearance="@style/TextAppearance.AppCompat.Caption" />
 
-        <!-- How the last run ended, when it ended badly. -->
+        <!-- The logs, and how the last run ended when it ended badly. -->
         <LinearLayout
             android:id="@+id/last_run"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone">
+            android:orientation="vertical">
 
             <TextView
                 style="@style/Section"
@@ -39,7 +38,8 @@
                 android:id="@+id/last_run_text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="#D9534F" />
+                android:textColor="#D9534F"
+                android:visibility="gone" />
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -200,6 +200,13 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="@string/tap_to_use" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/log_input"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/log_input" />
 
         <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/under_cutout"
