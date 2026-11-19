@@ -171,7 +171,7 @@ class LauncherActivity : AppCompatActivity() {
         val log = GameFiles.logTail(this, 400).ifEmpty { getString(R.string.log_empty) }
         val send = Intent(Intent.ACTION_SEND)
             .setType("text/plain")
-            .putExtra(Intent.EXTRA_SUBJECT, "Horizon Android log")
+            .putExtra(Intent.EXTRA_SUBJECT, getString(R.string.log_subject))
             .putExtra(Intent.EXTRA_TEXT, log.takeLast(90_000))
         startActivity(Intent.createChooser(send, getString(R.string.share_log)))
     }

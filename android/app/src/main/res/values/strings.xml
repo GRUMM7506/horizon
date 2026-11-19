@@ -43,5 +43,6 @@
     <string name="share_log">Share the log</string>
     <string name="dismiss">Dismiss</string>
     <string name="log_title">Log</string>
+    <string name="log_subject">Horizon for Android: log</string>
     <string name="log_empty">No log was written.</string>
 </resources>

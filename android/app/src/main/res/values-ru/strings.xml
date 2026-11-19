@@ -42,5 +42,6 @@
     <string name="share_log">Поделиться логом</string>
     <string name="dismiss">Скрыть</string>
     <string name="log_title">Лог</string>
+    <string name="log_subject">Horizon для Android: лог</string>
     <string name="log_empty">Лог не записан.</string>
 </resources>
