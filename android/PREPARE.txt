@@ -13,12 +13,22 @@ horizon-prepare для Android-порта Horizon
 3. JDK 25 (например, Eclipse Temurin 25). Нужен именно JDK: программа компилирует свои
    экспортёры. Java из лаунчера Minecraft не подойдёт.
 
-Запуск в этой папке (PowerShell или cmd):
+Запуск в этой папке (PowerShell):
 
-    horizon-prepare.exe --complete --server-jar C:\путь\к\server.jar
+    .\horizon-prepare.exe --prepare --complete --server-jar "C:\путь\к\server.jar"
 
-Если Minecraft стоит не в %APPDATA%\.minecraft, добавьте --minecraft-dir ПУТЬ.
-Подготовка идёт несколько минут. Проверить результат: horizon-prepare.exe --check
+Нужны оба ключа: --prepare берёт файлы игры из вашей копии Minecraft, --complete добавляет звуки
+и проверяет результат. Пути пишите целиком: PowerShell не раскрывает %APPDATA%.
+
+Если Minecraft стоит не в C:\Users\ИМЯ\AppData\Roaming\.minecraft (другой лаунчер), добавьте
+--minecraft-dir "ПАПКА", где ПАПКА содержит versions\26.3, libraries и assets.
+
+Если Horizon уже установлен на этом компьютере через его лаунчер, файлы игры можно не искать:
+скопируйте папку .local\minecraft из установленной версии
+(C:\Users\ИМЯ\AppData\Roaming\horizon-launcher\versions\ВЕРСИЯ\.local\minecraft) в папку .local
+рядом с этой программой и запустите .\horizon-prepare.exe --prepare --complete без других ключей.
+
+Подготовка идёт несколько минут. Проверить результат: .\horizon-prepare.exe --check
 
 Результат: папка .local\horizon-client\26.3 рядом с программой. Перенесите её на телефон в
 Android/data/dev.horizonport.android/files/horizon/.local/horizon-client/26.3 (старую сначала
@@ -34,6 +44,6 @@ horizon-prepare for Horizon's Android port, built from the same commit as the AP
 run. The game only reads resources its own version prepared. You need Minecraft: Java Edition
 26.3 played once from the official launcher, its server.jar, and a JDK 25. Run, in this folder:
 
-    horizon-prepare --complete --server-jar /path/to/server.jar
+    horizon-prepare --prepare --complete --server-jar /path/to/server.jar
 
 and copy .local/horizon-client/26.3 to the phone (docs/android-port.md).
