@@ -7,6 +7,10 @@ name: android
 on:
   push:
     branches: [android-port]
+    # A change to the notes builds nothing new.
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
   pull_request:
     paths:
       - 'android/**'
