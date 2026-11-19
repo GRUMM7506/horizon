@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:fitsSystemWindows="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/app_name"
+            android:textAppearance="@style/TextAppearance.AppCompat.Display1" />
+
+        <TextView
+            android:id="@+id/subtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.AppCompat.Caption" />
+
+        <!-- How the last run ended, when it ended badly. -->
+        <LinearLayout
+            android:id="@+id/last_run"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                style="@style/Section"
+                android:text="@string/section_last_run" />
+
+            <TextView
+                android:id="@+id/last_run_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#D9534F" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/show_log"
+                    style="@style/Widget.AppCompat.Button.Borderless.Colored"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/show_log" />
+
+                <Button
+                    android:id="@+id/share_log"
+                    style="@style/Widget.AppCompat.Button.Borderless.Colored"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/share_log" />
+
+                <Button
+                    android:id="@+id/dismiss_last_run"
+                    style="@style/Widget.AppCompat.Button.Borderless"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/dismiss" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <TextView
+            style="@style/Section"
+            android:text="@string/section_resources" />
+
+        <TextView
+            android:id="@+id/resources_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textIsSelectable="true" />
+
+        <TextView
+            android:id="@+id/resources_help"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textIsSelectable="true" />
+
+        <ProgressBar
+            android:id="@+id/import_progress"
+            style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:max="1000"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/import_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/import_zip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/import_zip" />
+
+            <Button
+                android:id="@+id/check_again"
+                style="@style/Widget.AppCompat.Button.Borderless.Colored"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/check_again" />
+        </LinearLayout>
+
+        <TextView
+            style="@style/Section"
+            android:text="@string/section_player" />
+
+        <EditText
+            android:id="@+id/name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/name_hint"
+            android:importantForAutofill="no"
+            android:inputType="textNoSuggestions|textVisiblePassword"
+            android:maxLength="16"
+            android:singleLine="true" />
+
+        <EditText
+            android:id="@+id/server"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/server_hint"
+            android:importantForAutofill="no"
+            android:inputType="textUri"
+            android:singleLine="true" />
+
+        <TextView
+            style="@style/Section"
+            android:text="@string/section_settings" />
+
+        <TextView
+            android:id="@+id/render_distance_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <SeekBar
+            android:id="@+id/render_distance"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="30" />
+
+        <TextView
+            android:id="@+id/gui_scale_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" />
+
+        <SeekBar
+            android:id="@+id/gui_scale"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="6" />
+
+        <TextView
+            android:id="@+id/button_scale_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" />
+
+        <SeekBar
+            android:id="@+id/button_scale"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="30" />
+
+        <TextView
+            android:id="@+id/button_opacity_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" />
+
+        <SeekBar
+            android:id="@+id/button_opacity"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="18" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/tap_to_use"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/tap_to_use" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/under_cutout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/under_cutout" />
+
+        <TextView
+            android:id="@+id/vulkan_warning"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/vulkan_missing"
+            android:textColor="#D9534F"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/play"
+            style="@style/Widget.AppCompat.Button.Colored"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:layout_marginTop="16dp"
+            android:text="@string/play"
+            android:textSize="20sp" />
+    </LinearLayout>
+</ScrollView>

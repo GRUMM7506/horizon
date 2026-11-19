@@ -1,0 +1,7 @@
+.gradle/
+build/
+local.properties
+*.iml
+.idea/
+# The game's library, built by cargo-ndk (docs/android-port.md).
+app/src/main/jniLibs/

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Horizon</string>
+    <string name="subtitle">Unofficial Android port, version %1$s</string>
+
+    <string name="section_resources">Game resources</string>
+    <string name="resources_found">Prepared resources found:\n%1$s</string>
+    <string name="resources_missing">Prepared resources were not found.</string>
+    <string name="resources_help">The game ships without Minecraft\'s files. Prepare them on a computer from your own copy of Minecraft 26.3 (`horizon-prepare`, see the Horizon README; it needs Java 25), then bring the result here in one of two ways:\n\n1. Copy the whole `.local` folder over USB into\n%1$s\n\n2. Or pack `.local` into a zip, copy the zip to the phone and import it with the button below.\n\nThe folder must end up holding `.local/horizon-client/26.3/horizon-resources.json`.</string>
+    <string name="import_zip">Import a zip</string>
+    <string name="check_again">Check again</string>
+    <string name="cancel">Cancel</string>
+    <string name="importing">Unpacking: %1$s</string>
+    <string name="import_done">Unpacked %1$d files.</string>
+    <string name="import_failed">The import failed: %1$s</string>
+
+    <string name="section_player">Player</string>
+    <string name="name_hint">Name for offline play</string>
+    <string name="name_invalid">3 to 16 characters: Latin letters, digits and _</string>
+    <string name="server_hint">Server address to join at once (optional)</string>
+
+    <string name="section_settings">Settings</string>
+    <string name="render_distance">Render distance: %1$d chunks</string>
+    <string name="gui_scale">GUI scale: %1$s</string>
+    <string name="gui_scale_auto">auto</string>
+    <string name="button_scale">Touch button size: %1$d%%</string>
+    <string name="button_opacity">Touch button opacity: %1$d%%</string>
+    <string name="under_cutout">Draw under the display cutout</string>
+    <string name="tap_to_use">Tap the world to use, hold to mine (otherwise: tap attacks, hold uses)</string>
+
+    <string name="play">Play</string>
+
+    <string name="vulkan_title">Vulkan 1.1 is not supported</string>
+    <string name="vulkan_message">This device does not report Vulkan 1.1, which Horizon\'s renderer needs. The game will most likely not start or will draw wrongly.\n\nYou can still try: it will fall back to OpenGL ES where it can.</string>
+    <string name="vulkan_missing">This device does not report Vulkan 1.1.</string>
+    <string name="try_anyway">Try anyway</string>
+    <string name="close">Close</string>
+
+    <string name="section_last_run">Last run</string>
+    <string name="last_run_error">The game stopped with an error:\n%1$s</string>
+    <string name="last_run_crash">The game ended unexpectedly (a crash, or the system closed it).</string>
+    <string name="show_log">Show the log</string>
+    <string name="share_log">Share the log</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="log_title">Log</string>
+    <string name="log_empty">No log was written.</string>
+</resources>
