@@ -6,7 +6,7 @@
     <string name="section_resources">Game resources</string>
     <string name="resources_found">Prepared resources found:\n%1$s</string>
     <string name="resources_missing">Prepared resources were not found.</string>
-    <string name="resources_help">The game ships without Minecraft\'s files. Prepare them on a computer from your own copy of Minecraft 26.3 (`horizon-prepare`, see the Horizon README; it needs Java 25), then bring the result here in one of two ways:\n\n1. Copy the whole `.local` folder over USB into\n%1$s\n\n2. Or pack `.local` into a zip, copy the zip to the phone and import it with the button below.\n\nThe folder must end up holding `.local/horizon-client/26.3/horizon-resources.json`.</string>
+    <string name="resources_help">The game ships without Minecraft\'s files. Prepare them on a computer from your own copy of Minecraft 26.3 (`horizon-prepare`, see the Horizon README; it needs Java 25), then bring the result here in one of two ways:\n\n1. Copy the `.local` folder over USB into\n%1$s\n\n2. Or pack `.local` into a zip, copy the zip to the phone and import it with the button below.\n\nOf `.local` the game only needs `horizon-client` (the rest is the preparer\'s own and can stay on the computer). The folder must end up holding `.local/horizon-client/26.3/horizon-resources.json`.</string>
     <string name="import_zip">Import a zip</string>
     <string name="check_again">Check again</string>
     <string name="cancel">Cancel</string>
