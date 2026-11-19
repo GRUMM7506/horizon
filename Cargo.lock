@@ -126,6 +126,7 @@ dependencies = [
  "ndk-context",
  "ndk-sys",
  "num_enum",
+ "simd_cesu8",
  "thiserror 2.0.21",
 ]
 
@@ -1760,6 +1761,19 @@ dependencies = [
 [[package]]
 name = "horizon-addresses"
 version = "0.1.0"
+
+[[package]]
+name = "horizon-android"
+version = "0.1.0"
+dependencies = [
+ "horizon-client-input",
+ "horizon-client-render",
+ "horizon-game",
+ "horizon-guest-stack",
+ "jni 0.21.1",
+ "libc",
+ "winit",
+]
 
 [[package]]
 name = "horizon-anticheat"

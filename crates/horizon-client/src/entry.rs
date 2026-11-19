@@ -24,6 +24,8 @@ impl Startup {
 /// and resource marker metadata only: no logging, account loading, mods or worker threads.
 /// Account IO, cwd changes and command registration remain in Options::read, after leases.
 pub fn prepare() -> Startup {
+    // Android has no holder process: its game is a library in the launcher's activity.
+    #[cfg(not(target_os = "android"))]
     horizon_mod_package::holder::enter();
     let result: crate::Result<_> = (|| {
         let mut command = std::process::Command::new(std::env::current_exe()?);
@@ -39,12 +41,40 @@ pub fn prepare() -> Startup {
     let Some(options) = options else {
         std::process::exit(0);
     };
+    #[cfg(not(target_os = "android"))]
     let capture = horizon_mod_package::holder::acquire(&launch);
+    #[cfg(target_os = "android")]
+    let capture = None;
     Startup {
         launch,
         options,
         _capture: capture,
     }
+}
+
+/// Android: the game is a library an activity loads (docs/android-port.md). The launcher's
+/// arguments stand in for the process's own, `game_dir` for the folder it would start in and
+/// `home` for the default game home; there is no holder to enter. A bad command line is the
+/// error, for the activity to show.
+#[cfg(target_os = "android")]
+pub fn prepare_android(
+    args: Vec<String>,
+    game_dir: &std::path::Path,
+    home: &std::path::Path,
+) -> Result<Option<Startup>, String> {
+    let launch = LaunchArguments::parse(
+        args.into_iter(),
+        game_dir,
+        home,
+        std::env::var_os("HORIZON_HOME").as_deref(),
+    )
+    .map_err(|error| error.to_string())?;
+    let options = game::Options::validate(launch.clone()).map_err(|error| error.to_string())?;
+    Ok(options.map(|options| Startup {
+        launch,
+        options,
+        _capture: None,
+    }))
 }
 
 /// Refuse startup if any merged copy could not be installed, before loading any mod.

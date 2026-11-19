@@ -28,8 +28,27 @@ pub fn main() {
     horizon_guest_stack::prepare_main();
     horizon_mod_host::exit_if_compile_child();
     let startup = horizon_client::entry::prepare();
+    // Android has no holder (and starts through `main_android`).
+    #[cfg(not(target_os = "android"))]
     std::hint::black_box(&horizon_mod_package::holder::CAPABILITY);
     horizon_mod_host::main_with(Vec::new(), &[], &[], startup);
+}
+
+/// Android: runs the game inside the activity that loaded it (`horizon-android`,
+/// docs/android-port.md), with the launcher's arguments, and returns when it ends. The calling
+/// thread is the activity's native thread, started with the main thread's stack reservation: no
+/// process to start again, no compiler child and no holder.
+#[cfg(target_os = "android")]
+pub fn main_android(
+    args: Vec<String>,
+    game_dir: &std::path::Path,
+    home: &std::path::Path,
+) -> Result<(), String> {
+    let Some(startup) = horizon_client::entry::prepare_android(args, game_dir, home)? else {
+        return Ok(());
+    };
+    horizon_mod_host::main_with(Vec::new(), &[], &[], startup);
+    Ok(())
 }
 
 /// Establish the executable main thread stack before initialization.

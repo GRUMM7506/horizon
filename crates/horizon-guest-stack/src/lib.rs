@@ -119,7 +119,9 @@ pub fn check_current() -> Result<(), &'static str> {
 }
 
 fn inspect_current() -> Result<(), &'static str> {
-    #[cfg(target_os = "linux")]
+    // Android's bionic answers the same query; its activity thread gets the reservation from
+    // the library's entry point (docs/android-port.md).
+    #[cfg(any(target_os = "linux", target_os = "android"))]
     {
         let mut attr = std::mem::MaybeUninit::<libc::pthread_attr_t>::uninit();
         // SAFETY: pthread_self is live and attr is writable. Destroy only on success.
@@ -154,9 +156,19 @@ fn inspect_current() -> Result<(), &'static str> {
             return Err("GuestStackUnavailable: calling thread needs 136 MiB of stack");
         }
     }
-    #[cfg(not(any(target_os = "linux", target_vendor = "apple", windows)))]
+    #[cfg(not(any(
+        target_os = "linux",
+        target_os = "android",
+        target_vendor = "apple",
+        windows
+    )))]
     return Err("GuestStackUnavailable: stack inspection is unsupported on this platform");
-    #[cfg(any(target_os = "linux", target_vendor = "apple", windows))]
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "android",
+        target_vendor = "apple",
+        windows
+    ))]
     Ok(())
 }
 

@@ -1,0 +1,26 @@
+[package]
+name = "horizon-android"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "The game as an Android library: android_main for the launcher's GameActivity and its JNI side (docs/android-port.md)"
+
+# libhorizon_android.so, which android/ packs into the APK. Empty on every other target.
+[lib]
+crate-type = ["cdylib"]
+
+[target.'cfg(target_os = "android")'.dependencies]
+# No `controllers`: gilrs and hidapi have no Android backend; pads come through the activity.
+horizon-game = { path = "../horizon-game", default-features = false, features = ["audio", "horizon-extras"] }
+horizon-client-input = { path = "../horizon-client-input" }
+horizon-client-render = { path = "../horizon-client-render" }
+horizon-guest-stack = { path = "../horizon-guest-stack" }
+winit = { version = "0.30.13", features = ["android-game-activity"] }
+# The version cpal already brings.
+jni = "0.21"
+libc = "0.2"
+
+[lints]
+workspace = true

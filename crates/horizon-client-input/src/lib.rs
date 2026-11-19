@@ -4,6 +4,8 @@
 //! (`horizon_client::keybinds`, ...).
 #![forbid(unsafe_code)]
 pub mod actions;
+#[cfg(target_os = "android")]
+pub mod android;
 pub mod clipboard;
 pub mod gamepad;
 pub mod gameplay_guide;

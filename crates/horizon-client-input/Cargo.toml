@@ -13,7 +13,15 @@ horizon-client-core = { path = "../horizon-client-core" }
 winit = "0.30.13"
 log = "0.4"
 png = "0.18"
+
+# arboard has no Android backend; clipboard.rs keeps copy and paste inside the game there.
+[target.'cfg(not(target_os = "android"))'.dependencies]
 arboard = { version = "3.6.1", default-features = false, features = ["wayland-data-control"] }
+
+# Android: winit runs on a GameActivity (docs/android-port.md). Chosen here, in the lowest crate that
+# uses winit, so every crate above builds for Android whichever of them cargo is asked for.
+[target.'cfg(target_os = "android")'.dependencies]
+winit = { version = "0.30.13", features = ["android-game-activity"] }
 
 [dev-dependencies]
 # The window icon test decodes Horizon's icon.

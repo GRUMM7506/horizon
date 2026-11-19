@@ -9,6 +9,8 @@ members = [
     "crates/horizon-hooks",
     "crates/horizon-mod-host",
     "crates/horizon-game",
+    # The game as an Android library, for the launcher in android/ (docs/android-port.md).
+    "crates/horizon-android",
     "crates/horizon-official",
     "crates/horizon-heartbeat",
 

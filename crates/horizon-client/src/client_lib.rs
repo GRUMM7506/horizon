@@ -208,6 +208,8 @@ pub use horizon_client_core::scoreboard;
 pub use horizon_client_core::snbt;
 pub use horizon_client_core::text;
 pub use horizon_client_input::actions;
+#[cfg(target_os = "android")]
+pub use horizon_client_input::android;
 pub use horizon_client_input::clipboard;
 pub use horizon_client_input::gamepad;
 pub use horizon_client_input::gameplay_guide;

@@ -1124,3 +1124,19 @@ mod tests {
         );
     }
 }
+
+/// The event loop the game's windows run on. Android's is made for the activity the game was
+/// loaded into ([`crate::android::set_app`], docs/android-port.md).
+pub fn event_loop() -> Result<winit::event_loop::EventLoop<()>, winit::error::EventLoopError> {
+    #[cfg(target_os = "android")]
+    {
+        use winit::platform::android::EventLoopBuilderExtAndroid;
+        let mut builder = winit::event_loop::EventLoop::builder();
+        if let Some(app) = crate::android::app() {
+            builder.with_android_app(app);
+        }
+        builder.build()
+    }
+    #[cfg(not(target_os = "android"))]
+    winit::event_loop::EventLoop::new()
+}
