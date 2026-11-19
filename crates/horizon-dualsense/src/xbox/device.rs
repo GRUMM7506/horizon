@@ -4,26 +4,26 @@
 #[cfg(windows)]
 use crate::xbox::wgi;
 use crate::xbox::{Motors, Target};
-#[cfg(not(target_os = "ios"))]
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
 use crate::xbox::{bluetooth, is_xbox_one, usb};
-#[cfg(not(target_os = "ios"))]
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
 use hidapi::{BusType, HidApi, HidDevice, HidError};
-#[cfg(not(target_os = "ios"))]
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
 use std::fmt;
 use std::sync::Arc;
-#[cfg(not(target_os = "ios"))]
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::mpsc::Sender;
-#[cfg(not(target_os = "ios"))]
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
 use std::sync::mpsc::{self, RecvTimeoutError};
 use std::thread::JoinHandle;
 use std::time::Duration;
-#[cfg(not(target_os = "ios"))]
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
 use std::time::Instant;
 
 /// Why a pad could not take a report.
-#[cfg(not(target_os = "ios"))]
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
 #[derive(Debug)]
 pub enum Error {
     /// hidapi refused the report: a pad that went away, an endpoint another process holds.
@@ -33,7 +33,7 @@ pub enum Error {
     Wgi(windows::core::Error),
 }
 
-#[cfg(not(target_os = "ios"))]
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -44,13 +44,13 @@ impl fmt::Display for Error {
     }
 }
 
-#[cfg(not(target_os = "ios"))]
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
 impl std::error::Error for Error {}
 
-#[cfg(not(target_os = "ios"))]
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
 pub type Result<T> = std::result::Result<T, Error>;
 
-#[cfg(not(target_os = "ios"))]
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
 impl From<HidError> for Error {
     fn from(e: HidError) -> Self {
         Error::Hid(e)
@@ -79,20 +79,20 @@ pub fn output_supported(transport: Transport) -> bool {
 }
 
 /// An open Xbox One pad: its HID endpoint, or Windows.Gaming.Input on Windows.
-#[cfg(not(target_os = "ios"))]
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
 pub struct Xbox {
     backend: Backend,
     transport: Transport,
 }
 
-#[cfg(not(target_os = "ios"))]
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
 enum Backend {
     Hid(HidDevice),
     #[cfg(windows)]
     Wgi(wgi::Pad),
 }
 
-#[cfg(not(target_os = "ios"))]
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
 impl Xbox {
     /// The pad `target` names, on the link it is on. Windows.Gaming.Input says which link the
     /// pad is on: a wired pad goes through it (its HID endpoint takes no report), and a paired
@@ -200,7 +200,7 @@ pub type Rumble = Vec<(Motors, Duration)>;
 
 // On iOS no thread reads the queue (the Link never opens); the variants stay so the
 // Link's API is the same everywhere.
-#[cfg_attr(target_os = "ios", allow(dead_code))]
+#[cfg_attr(any(target_os = "ios", target_os = "android"), allow(dead_code))]
 enum Message {
     Rumble(Rumble),
     Scan,
@@ -217,7 +217,7 @@ pub struct Link {
 
 impl Link {
     /// Start the thread and look for the pad `target` names.
-    #[cfg(not(target_os = "ios"))]
+    #[cfg(not(any(target_os = "ios", target_os = "android")))]
     pub fn start(target: Target) -> Link {
         let (tx, rx) = mpsc::channel();
         let open = Arc::new(AtomicU8::new(0));
@@ -235,7 +235,7 @@ impl Link {
     }
 
     /// No output on iOS: hidapi has no backend there. The Link never opens.
-    #[cfg(target_os = "ios")]
+    #[cfg(any(target_os = "ios", target_os = "android"))]
     pub fn start(_target: Target) -> Link {
         Link {
             tx: None,
@@ -282,10 +282,10 @@ impl Drop for Link {
 
 /// Looks for the pad this many times, a second apart, after a scan finds nothing (its hidraw
 /// node may appear after the controller does).
-#[cfg(not(target_os = "ios"))]
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
 const SCAN_TRIES: u32 = 5;
 
-#[cfg(not(target_os = "ios"))]
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
 struct Writer {
     api: Option<HidApi>,
     pad: Option<Box<dyn Handle>>,
@@ -303,19 +303,19 @@ struct Writer {
 
 /// What the writer needs from an open pad. It is a trait so the state machine can be tested
 /// without hardware.
-#[cfg(not(target_os = "ios"))]
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
 trait Handle: Send {
     fn write(&mut self, motors: Motors) -> std::result::Result<(), String>;
 }
 
-#[cfg(not(target_os = "ios"))]
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
 impl Handle for Xbox {
     fn write(&mut self, motors: Motors) -> std::result::Result<(), String> {
         Xbox::write(self, motors).map_err(|e| e.to_string())
     }
 }
 
-#[cfg(not(target_os = "ios"))]
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
 impl Writer {
     fn new(open: Arc<AtomicU8>, target: Target) -> Self {
         Writer {
@@ -469,7 +469,7 @@ impl Writer {
     }
 }
 
-#[cfg(all(test, not(target_os = "ios")))]
+#[cfg(all(test, not(any(target_os = "ios", target_os = "android"))))]
 mod tests {
     use super::*;
 

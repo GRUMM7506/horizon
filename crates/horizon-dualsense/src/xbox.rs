@@ -12,7 +12,7 @@ pub mod device;
 #[cfg(windows)]
 mod wgi;
 
-#[cfg(not(target_os = "ios"))]
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
 pub use device::{Error, Xbox};
 pub use device::{Link, Transport};
 
