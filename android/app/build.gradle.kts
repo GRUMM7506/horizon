@@ -3,8 +3,10 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
-// The game itself: built by cargo-ndk into src/main/jniLibs (docs/android-port.md).
-val gameLibrary = file("src/main/jniLibs/arm64-v8a/libhorizon_android.so")
+// The game itself: built by cargo-ndk into src/main/jniLibs (docs/android-port.md). Phones are
+// arm64-v8a; `-Phorizon.abi=x86_64` packs the emulator's build instead (android/smoke-test.sh).
+val gameAbi = (findProperty("horizon.abi") as String?) ?: "arm64-v8a"
+val gameLibrary = file("src/main/jniLibs/$gameAbi/libhorizon_android.so")
 
 android {
     namespace = "dev.horizonport.android"
@@ -18,7 +20,7 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "0.1.0"
-        ndk { abiFilters += "arm64-v8a" }
+        ndk { abiFilters += gameAbi }
     }
 
     signingConfigs {
@@ -66,7 +68,7 @@ val checkGameLibrary by tasks.registering {
             throw GradleException(
                 "The game's library is missing: $gameLibrary\n" +
                     "Build it first, from the repository root:\n" +
-                    "  cargo ndk -t arm64-v8a --platform 26 -o android/app/src/main/jniLibs " +
+                    "  cargo ndk -t $gameAbi --platform 26 -o android/app/src/main/jniLibs " +
                     "build -p horizon-android --release",
             )
         }

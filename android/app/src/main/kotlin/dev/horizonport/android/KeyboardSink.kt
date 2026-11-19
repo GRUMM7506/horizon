@@ -29,11 +29,9 @@ class KeyboardSink(context: Context) : View(context) {
     override fun onCheckIsTextEditor() = true
 
     override fun onCreateInputConnection(attributes: EditorInfo): InputConnection {
-        // Plain text without suggestions: a keyboard that composes words would rewrite text the
-        // game already has.
-        attributes.inputType = InputType.TYPE_CLASS_TEXT or
-            InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS or
-            InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+        // Plain text, every language the keyboard has. Suggestions are asked off, but a
+        // keyboard that composes words anyway is followed (`sync`).
+        attributes.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
         attributes.imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI or
             EditorInfo.IME_FLAG_NO_FULLSCREEN or
             EditorInfo.IME_ACTION_SEND

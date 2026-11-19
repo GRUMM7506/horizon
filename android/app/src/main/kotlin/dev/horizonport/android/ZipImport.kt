@@ -33,7 +33,8 @@ class ZipImport(
                 while (true) {
                     val entry = zip.nextEntry ?: break
                     if (cancelled) error("cancelled")
-                    val out = File(root, entry.name).canonicalFile
+                    // Archives made on Windows may name their entries with backslashes.
+                    val out = File(root, entry.name.replace('\\', '/')).canonicalFile
                     if (out != root && !out.path.startsWith(root.path + File.separator)) {
                         error("the archive holds a path outside the game folder: ${entry.name}")
                     }

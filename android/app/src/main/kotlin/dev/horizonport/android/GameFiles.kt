@@ -11,6 +11,9 @@ object GameFiles {
     /** The file `horizon-prepare` writes last, at the root of the prepared resources. */
     private const val MARKER = "horizon-resources.json"
 
+    /** The game's own folders, which hold no prepared resources. */
+    private val SKIPPED = setOf("saves", "logs", "crash-reports", "screenshots", "resourcepacks", ".horizon-cache")
+
     fun dir(context: Context): File {
         val base = context.getExternalFilesDir(null) ?: context.filesDir
         return File(base, "horizon").apply { mkdirs() }
@@ -22,14 +25,20 @@ object GameFiles {
      */
     fun resources(context: Context): File? {
         val root = dir(context)
-        val candidates = sequence {
-            yield(root)
-            for (parent in listOf(".local/horizon-client", "local/horizon-client", "horizon-client", ".local", "")) {
-                val folder = if (parent.isEmpty()) root else File(root, parent)
-                folder.listFiles()?.filter { it.isDirectory }?.sortedByDescending { it.name }?.forEach { yield(it) }
-            }
-        }
-        return candidates.firstOrNull { File(it, MARKER).isFile }
+        // Where it belongs first; then wherever a copy or an archive with one folder more (or
+        // less) around it put it. Worlds and logs are not looked into.
+        File(root, ".local/horizon-client").listFiles()
+            ?.filter { File(it, MARKER).isFile }
+            ?.maxByOrNull { it.name }
+            ?.let { return it }
+        return find(root, 4)
+    }
+
+    private fun find(folder: File, depth: Int): File? {
+        if (File(folder, MARKER).isFile) return folder
+        if (depth == 0) return null
+        val inside = folder.listFiles()?.filter { it.isDirectory && it.name !in SKIPPED } ?: return null
+        return inside.sortedByDescending { it.name }.firstNotNullOfOrNull { find(it, depth - 1) }
     }
 
     fun options(context: Context) = File(dir(context), "options.txt")

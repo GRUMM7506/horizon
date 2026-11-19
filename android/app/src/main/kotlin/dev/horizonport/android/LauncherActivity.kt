@@ -63,7 +63,7 @@ class LauncherActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.import_zip).setOnClickListener {
             val running = import
-            if (running != null) running.cancelled = true else pickZip.launch(arrayOf("application/zip", "application/octet-stream"))
+            if (running != null) running.cancelled = true else pickZip.launch(ZIP_TYPES)
         }
         findViewById<Button>(R.id.check_again).setOnClickListener { showResources() }
         findViewById<Button>(R.id.play).setOnClickListener { play() }
@@ -264,6 +264,9 @@ class LauncherActivity : AppCompatActivity() {
     }
 
     companion object {
+        /** What file providers call a zip. */
+        private val ZIP_TYPES = arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream")
+
         /** A phone's default: the game's own is 12. */
         private const val DEFAULT_DISTANCE = 8
     }
