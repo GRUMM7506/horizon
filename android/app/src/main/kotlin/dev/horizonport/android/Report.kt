@@ -50,9 +50,11 @@ object Report {
 
     private fun settings(context: Context): String {
         val prefs = Prefs(context)
+        val resources = GameFiles.resources(context)
         return """
             == Settings ==
-            Resources: ${GameFiles.resources(context)?.path ?: "not found"}
+            Resources: ${resources?.path ?: "not found"}
+            Prepared by output version ${resources?.let(GameFiles::preparedVersion) ?: "unknown"}; this build reads ${BuildConfig.PREPARED_VERSION}
             Last run: ${GameFiles.lastExit(context)?.replace('\n', ' ') ?: "none"}
             Render distance ${GameFiles.readOption(context, "renderDistance") ?: "-"}, GUI scale ${GameFiles.readOption(context, "guiScale") ?: "-"}
             Touch buttons: size ${prefs.buttonScale}%, opacity ${prefs.buttonOpacity}%, tap uses: ${prefs.tapToUse}

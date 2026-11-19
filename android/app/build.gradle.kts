@@ -8,6 +8,13 @@ plugins {
 val gameAbi = (findProperty("horizon.abi") as String?) ?: "arm64-v8a"
 val gameLibrary = file("src/main/jniLibs/$gameAbi/libhorizon_android.so")
 
+// The prepared resources this build of the game reads: the preparer's OUTPUT_VERSION, from its
+// own source. The launcher says so before the game does, when a folder was prepared by another.
+val preparedVersion = Regex("""pub const OUTPUT_VERSION: u32 = (\d+);""")
+    .find(rootProject.file("../crates/horizon-prepare/src/lib.rs").readText())
+    ?.groupValues?.get(1)
+    ?: throw GradleException("crates/horizon-prepare/src/lib.rs names no OUTPUT_VERSION")
+
 android {
     namespace = "dev.horizonport.android"
     compileSdk = 35
@@ -21,6 +28,7 @@ android {
         versionCode = 1
         versionName = "0.1.0"
         ndk { abiFilters += gameAbi }
+        buildConfigField("int", "PREPARED_VERSION", preparedVersion)
     }
 
     signingConfigs {
@@ -46,6 +54,8 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
+
+    buildFeatures { buildConfig = true }
 
     packaging {
         // Stored uncompressed and page-aligned: the system maps the library from the APK.

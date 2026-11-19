@@ -1,0 +1,39 @@
+horizon-prepare для Android-порта Horizon
+=========================================
+
+Эта программа собрана из того же коммита, что и APK из того же прогона CI. Игра на телефоне
+читает только ресурсы, подготовленные своей версией Horizon: ресурсы от другой версии (например,
+от Horizon, установленного на ПК через лаунчер) она отвергнет при загрузке.
+
+Что нужно на компьютере:
+
+1. Minecraft: Java Edition 26.3, хотя бы раз запущенный из официального лаунчера.
+2. server.jar версии 26.3. Ссылка на него лежит в файле
+   %APPDATA%\.minecraft\versions\26.3\26.3.json, поле downloads.server.url.
+3. JDK 25 (например, Eclipse Temurin 25). Нужен именно JDK: программа компилирует свои
+   экспортёры. Java из лаунчера Minecraft не подойдёт.
+
+Запуск в этой папке (PowerShell или cmd):
+
+    horizon-prepare.exe --complete --server-jar C:\путь\к\server.jar
+
+Если Minecraft стоит не в %APPDATA%\.minecraft, добавьте --minecraft-dir ПУТЬ.
+Подготовка идёт несколько минут. Проверить результат: horizon-prepare.exe --check
+
+Результат: папка .local\horizon-client\26.3 рядом с программой. Перенесите её на телефон в
+Android/data/dev.horizonport.android/files/horizon/.local/horizon-client/26.3 (старую сначала
+удалите), либо упакуйте .local в zip и импортируйте кнопкой в лаунчере. Остальное содержимое
+.local на телефоне не нужно.
+
+Ни один файл Minecraft в этом архиве не лежит: только программа Horizon, её Java-исходники
+экспортёров и research-lock.json с контрольными суммами.
+
+----
+
+horizon-prepare for Horizon's Android port, built from the same commit as the APK of the same CI
+run. The game only reads resources its own version prepared. You need Minecraft: Java Edition
+26.3 played once from the official launcher, its server.jar, and a JDK 25. Run, in this folder:
+
+    horizon-prepare --complete --server-jar /path/to/server.jar
+
+and copy .local/horizon-client/26.3 to the phone (docs/android-port.md).

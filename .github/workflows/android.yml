@@ -163,3 +163,52 @@ jobs:
           path: smoke-out
           if-no-files-found: ignore
           retention-days: 14
+
+  preparer:
+    # horizon-prepare from this same commit, for the player's computer: the game on the phone only reads
+    # resources its own version prepared, and the Horizon installed on the computer is usually another one.
+    # The bundle holds the program, its exporters' Java sources and research-lock.json; no file of Minecraft's.
+    name: preparer (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows
+            os: windows-2025
+            program: horizon-prepare.exe
+          - name: linux
+            os: ubuntu-24.04
+            program: horizon-prepare
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: rust
+        run: echo "version=$(cat tools/ci/rust-version)" >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable, 2026-11
+        with:
+          toolchain: ${{ steps.rust.outputs.version }}
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          shared-key: android-preparer-${{ matrix.name }}
+      - name: Build horizon-prepare
+        run: cargo build --locked --release -p horizon-prepare
+      - name: Bundle
+        run: |
+          mkdir -p bundle/horizon-prepare/mods/horizon/src/test
+          cp "target/release/${{ matrix.program }}" research-lock.json bundle/horizon-prepare/
+          cp android/PREPARE.txt bundle/horizon-prepare/README.txt
+          cp -r mods/horizon/src/test/java bundle/horizon-prepare/mods/horizon/src/test/
+          # The program finds its folder and reports what is missing, without Java or Minecraft.
+          "bundle/horizon-prepare/${{ matrix.program }}" --check || true
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: horizon-prepare-${{ matrix.name }}
+          path: bundle
+          if-no-files-found: error
+          retention-days: 30

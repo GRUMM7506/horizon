@@ -34,7 +34,9 @@ pub unsafe extern "C" fn __wrap_flock(fd: c_int, operation: c_int) -> c_int {
         *libc::__errno() = 0;
     }
     if !TOLD.swap(true, Ordering::Relaxed) {
-        eprintln!("Horizon for Android: the game's storage has no file locks; they are taken as granted");
+        eprintln!(
+            "Horizon for Android: the game's storage has no file locks; they are taken as granted"
+        );
     }
     0
 }

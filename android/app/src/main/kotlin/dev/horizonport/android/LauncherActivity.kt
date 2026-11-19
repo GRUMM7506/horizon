@@ -28,6 +28,7 @@ class LauncherActivity : AppCompatActivity() {
     private var import: ZipImport? = null
     private var vulkan = true
     private var vulkanAccepted = false
+    private var staleAccepted = false
 
     private val pickZip = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) importZip(uri)
@@ -127,7 +128,13 @@ class LauncherActivity : AppCompatActivity() {
         val status = findViewById<TextView>(R.id.resources_status)
         val help = findViewById<TextView>(R.id.resources_help)
         if (found != null) {
-            status.text = getString(R.string.resources_found, found.path)
+            val prepared = GameFiles.preparedVersion(found)
+            val stale = if (prepared == BuildConfig.PREPARED_VERSION) "" else "\n\n" + getString(
+                R.string.resources_stale_message,
+                prepared?.toString() ?: "?",
+                BuildConfig.PREPARED_VERSION,
+            )
+            status.text = getString(R.string.resources_found, found.path) + stale
             help.visibility = View.GONE
         } else {
             status.text = getString(R.string.resources_missing)
@@ -140,13 +147,19 @@ class LauncherActivity : AppCompatActivity() {
     private fun showLastRun() {
         val exit = GameFiles.lastExit(this)
         val text = findViewById<TextView>(R.id.last_run_text)
-        val bad = exit != null && exit != "ok"
+        val bad = exit != null && exit != "ok" && exit != "exit 0"
         text.visibility = if (bad) View.VISIBLE else View.GONE
         findViewById<View>(R.id.dismiss_last_run).visibility = text.visibility
         text.text = when {
             !bad -> ""
             exit!!.startsWith("error") ->
                 getString(R.string.last_run_error, exit.substringAfter('\n', "").trim())
+            // The game stopped itself and said why in its crash report.
+            exit.startsWith("exit") -> {
+                val why = GameFiles.lastError(this) ?: exit
+                val stale = if ("horizon-prepare" in why) "\n\n" + getString(R.string.resources_stale_hint) else ""
+                getString(R.string.last_run_error, why) + stale
+            }
             // "running" (the process died without saying why) or "panic".
             else -> getString(R.string.last_run_crash)
         }
@@ -235,6 +248,27 @@ class LauncherActivity : AppCompatActivity() {
     private fun play() {
         val resources = GameFiles.resources(this) ?: return showResources()
         if (!vulkan && !vulkanAccepted) return vulkanDialog(startAfter = true)
+        // Resources made by another version of the preparer: the game would stop on the first
+        // file that changed since. Say so here, with what to do.
+        val prepared = GameFiles.preparedVersion(resources)
+        if (prepared != BuildConfig.PREPARED_VERSION && !staleAccepted) {
+            AlertDialog.Builder(this)
+                .setTitle(R.string.resources_stale_title)
+                .setMessage(
+                    getString(
+                        R.string.resources_stale_message,
+                        prepared?.toString() ?: "?",
+                        BuildConfig.PREPARED_VERSION,
+                    ) + "\n\n" + getString(R.string.resources_stale_hint),
+                )
+                .setNegativeButton(R.string.close, null)
+                .setPositiveButton(R.string.try_anyway) { _, _ ->
+                    staleAccepted = true
+                    play()
+                }
+                .show()
+            return
+        }
         save()
         val nameField = findViewById<EditText>(R.id.name)
         if (!Prefs.validName(prefs.name)) {

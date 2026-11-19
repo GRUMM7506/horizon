@@ -2,6 +2,7 @@ package dev.horizonport.android
 
 import android.content.Context
 import java.io.File
+import org.json.JSONObject
 
 /**
  * The game's folder on the device: `Android/data/<package>/files/horizon`. The player copies the
@@ -39,6 +40,24 @@ object GameFiles {
         if (depth == 0) return null
         val inside = folder.listFiles()?.filter { it.isDirectory && it.name !in SKIPPED } ?: return null
         return inside.sortedByDescending { it.name }.firstNotNullOfOrNull { find(it, depth - 1) }
+    }
+
+    /**
+     * The preparer's `OUTPUT_VERSION` that made these resources (`horizon-prepare.json` beside
+     * the marker), or null when they carry none.
+     */
+    fun preparedVersion(resources: File): Int? = runCatching {
+        JSONObject(File(resources, "horizon-prepare.json").readText()).getInt("output_version")
+    }.getOrNull()
+
+    /** What the game said as it stopped: the message of its newest crash report. */
+    fun lastError(context: Context): String? {
+        val report = File(dir(context), "crash-reports").listFiles()
+            ?.maxByOrNull { it.lastModified() } ?: return null
+        return report.useLines { lines ->
+            lines.dropWhile { !it.startsWith("Description:") }.drop(1)
+                .firstOrNull { it.isNotBlank() }?.trim()
+        }
     }
 
     fun options(context: Context) = File(dir(context), "options.txt")

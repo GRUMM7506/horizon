@@ -8,6 +8,7 @@
 #![cfg(target_os = "android")]
 
 mod bridge;
+mod exit;
 mod locks;
 mod output;
 mod stack;
@@ -50,8 +51,9 @@ fn android_main(app: AndroidApp) {
     }));
     bridge::install(&app);
     horizon_client_input::android::set_app(app.clone());
-    let exit = dir.join(EXIT_FILE);
-    let _ = std::fs::write(&exit, "running\n");
+    let exit_file = dir.join(EXIT_FILE);
+    let _ = std::fs::write(&exit_file, "running\n");
+    exit::set_file(exit_file.clone());
     let result = std::panic::catch_unwind(|| horizon_game::main_android(args, &dir, &dir));
     let status = match result {
         Ok(Ok(())) => "ok\n".to_owned(),
@@ -62,7 +64,7 @@ fn android_main(app: AndroidApp) {
         Err(_) => "panic\n".to_owned(),
     };
     eprintln!("Horizon for Android: the game ended: {}", status.trim_end());
-    let _ = std::fs::write(&exit, status);
+    let _ = std::fs::write(&exit_file, status);
     bridge::finish(&app);
     output::flush();
     // The game ran once in this process (its hooks and logs are set up for good): the activity's
