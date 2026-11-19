@@ -1807,6 +1807,9 @@ pub struct Renderer {
     /// panics when such a surface is acquired from (it never had one that
     /// worked), so frames configure it again first and skip until it takes.
     surface_unconfigured: bool,
+    /// The window went away and took the surface with it ([`Self::window_lost`]): nothing is
+    /// drawn, and a resize waits, until [`Self::window_restored`].
+    window_gone: bool,
     /// The last frame's statistics, all of one frame (`show_stats`): its sections drawn
     /// (F3's `C:`, the world icon's check), section draws (face ranges and translucent
     /// sections) and the draw calls the backend issued for them. A CPU frame's are its own;
@@ -4581,6 +4584,7 @@ impl Renderer {
             suspended: !drawable_size(size.width, size.height, max_side),
             acquire_validation_failures: 0,
             surface_unconfigured: false,
+            window_gone: false,
             drawn_sections: 0,
             section_draws: 0,
             section_draw_calls: 0,
@@ -4780,6 +4784,29 @@ impl Renderer {
         self.surface_recreated();
         Ok(())
     }
+    /// The window is going away under the renderer: Android destroys it whenever its activity
+    /// stops (docs/android-port.md). The surface is dropped while the window still exists; the
+    /// device and everything on it stay, and no frame is drawn until [`Self::window_restored`].
+    pub fn window_lost(&mut self) {
+        self.frame_gen.stop();
+        self.queue.wait();
+        self.surface = None;
+        *self
+            .spare_surface
+            .get_mut()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = None;
+        self.window_gone = true;
+        self.suspended = true;
+    }
+    /// The window is back, `width` x `height`: a new surface for it on the same device.
+    pub fn window_restored(&mut self, width: u32, height: u32) -> Result<()> {
+        if !std::mem::take(&mut self.window_gone) {
+            return Ok(());
+        }
+        self.recreate_surface()?;
+        self.resize(width, height);
+        Ok(())
+    }
     /// The world's depth, which occlusion culling's test and post effects may read.
     fn depth(device: &wgpu::Device, config: &wgpu::SurfaceConfiguration) -> wgpu::TextureView {
         device
@@ -4839,6 +4866,10 @@ impl Renderer {
     /// Follows the window to `width` x `height`. A size the swapchain can't take
     /// ([`drawable_size`]) keeps the last one and draws nothing until the next.
     pub fn resize(&mut self, width: u32, height: u32) {
+        if self.window_gone {
+            // No window to follow: `window_restored` brings the size it comes back with.
+            return;
+        }
         let max = self.device.limits().max_texture_dimension_2d;
         self.suspended = !drawable_size(width, height, max);
         if self.suspended {

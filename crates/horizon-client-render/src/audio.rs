@@ -1974,6 +1974,25 @@ impl Audio {
             0
         };
     }
+    /// The app left the screen (Android stops its activity, docs/android-port.md): the output
+    /// stops asking for samples, and every sound waits where it is.
+    pub fn output_suspended(&mut self) {
+        #[cfg(feature = "audio")]
+        if let Some(stream) = &self._stream
+            && let Err(e) = stream.pause()
+        {
+            log::warn!("Horizon: the sound output did not pause: {e}");
+        }
+    }
+    /// The app is back on the screen: the output plays on.
+    pub fn output_resumed(&mut self) {
+        #[cfg(feature = "audio")]
+        if let Some(stream) = &self._stream
+            && let Err(e) = stream.play()
+        {
+            log::warn!("Horizon: the sound output did not start again: {e}");
+        }
+    }
     /// `SoundManager.pauseAllExcept(MUSIC, UI)`.
     pub fn pause(&mut self) {
         self.engine.pause_all_except(

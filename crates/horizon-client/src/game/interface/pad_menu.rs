@@ -2096,6 +2096,11 @@ impl Game<'_> {
     /// sleeper gets (`InBedChatScreen`): the game opens that one, not the
     /// player, so the keyboard waits for A on its chat box.
     fn pad_auto_keyboard(&mut self) {
+        // Android: the system's keyboard opens with the text field (`sync_ime`), for fingers,
+        // which play as a controller there, and for a controller alike.
+        if cfg!(target_os = "android") {
+            return;
+        }
         let menu = &self.pad.menu;
         if osk_auto_opens(
             menu.osk.is_some(),
@@ -2113,7 +2118,7 @@ impl Game<'_> {
 
     /// What a key of the on-screen keyboard does: the same as a typed key in
     /// the field that has focus.
-    fn pad_osk_output(&mut self, out: osk::Output) {
+    pub(super) fn pad_osk_output(&mut self, out: osk::Output) {
         use osk::Output;
         let (key, text) = match &out {
             Output::Text(t) => (None, Some(t.as_str())),

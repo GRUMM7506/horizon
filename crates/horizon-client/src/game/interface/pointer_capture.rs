@@ -276,12 +276,17 @@ impl Game<'_> {
         if !self.internal_grab() {
             window.set_cursor_visible(!self.captured);
         }
+        #[cfg(target_os = "android")]
+        horizon_client::android::capture_pointer(self.captured);
     }
     /// The game's pointer grab leaves the system pointer where the person at the computer has
     /// it: a genuinely hidden `--offscreen` run, an agent's window no one has clicked yet, or a
     /// scripted run, which plays the game while the person may be using the computer.
     pub(super) fn internal_grab(&self) -> bool {
-        (self.options.offscreen && !self.split_window)
+        // Android has no system pointer to grab: a touch screen has none, and a mouse is
+        // captured by the activity (`android::capture_pointer`).
+        cfg!(target_os = "android")
+            || (self.options.offscreen && !self.split_window)
             || self.unclaimed_window
             || self.scripted_run()
     }

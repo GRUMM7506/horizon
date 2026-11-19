@@ -205,6 +205,10 @@ mod hardware {
 
     impl Pads {
         pub(super) fn read(&mut self) -> PadState {
+            // Android's controllers, as its activity reports them (docs/android-port.md).
+            #[cfg(target_os = "android")]
+            return horizon_client_render::android_runtime::pad_state();
+            #[cfg(not(target_os = "android"))]
             PadState::default()
         }
         pub(in crate::game) fn release_hardware(&mut self) {}
@@ -385,7 +389,8 @@ impl Game<'_> {
             self.pad_cancel_inputs(event_loop);
         }
         self.pad.context = Some(context);
-        if !self.settings.controller.enabled {
+        // Android: the touch controls come this way too, whatever the controller option says.
+        if !self.settings.controller.enabled && !cfg!(target_os = "android") {
             self.pad_output_off();
             self.pad_cancel_inputs(event_loop);
             // The radial menu closed with the pad: its overlay fades out, as for a cancel.
@@ -407,6 +412,9 @@ impl Game<'_> {
             Some(state) => state,
             None => self.pad.read(),
         };
+        // Android: the touch controls are a controller as well (docs/android-port.md).
+        #[cfg(target_os = "android")]
+        let hardware = hardware.merge(&self.android_touch_pad());
         // A Nintendo pad going by its letters is read that way: its own, or the one
         // splitscreen's router feeds this player.
         let hardware = if self.pad.by_letter(&self.settings.controller) {
@@ -647,7 +655,7 @@ impl Game<'_> {
 
     /// A bound action: a vanilla mapping acts as its default key or mouse
     /// button, like a rebound keyboard key.
-    fn pad_action(&mut self, action: &str, down: bool) -> Result<()> {
+    pub(super) fn pad_action(&mut self, action: &str, down: bool) -> Result<()> {
         let Some(route) = gamepad::route(action) else {
             log::warn!("Horizon: controller action {action} has no handler");
             return Ok(());

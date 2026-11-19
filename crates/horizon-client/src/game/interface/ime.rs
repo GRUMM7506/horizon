@@ -50,6 +50,14 @@ impl Game<'_> {
         if want != self.ime_allowed
             && let Some(window) = &self.window
         {
+            // Android: the activity's own keyboard view, whose text reaches the game
+            // (winit's drops it; docs/android-port.md).
+            #[cfg(target_os = "android")]
+            {
+                let _ = window;
+                horizon_client::android::show_keyboard(want);
+            }
+            #[cfg(not(target_os = "android"))]
             window.set_ime_allowed(want);
             self.ime_allowed = want;
             // The field lost the focus (or a new one took it): the composition

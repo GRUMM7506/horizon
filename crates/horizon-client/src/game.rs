@@ -4656,6 +4656,9 @@ impl Game<'_> {
         self.frame_graph
             .draw(self.settings.horizon.overlay, &mut batch, &self.gui.atlas);
         self.draw_pad_over_hud(&mut batch);
+        // Android: the touch controls, over the world only (docs/android-port.md).
+        #[cfg(target_os = "android")]
+        self.android_draw_touch(&mut batch);
         batch
     }
     fn hud_layers(&mut self, size: [u32; 2]) -> HudBatch {

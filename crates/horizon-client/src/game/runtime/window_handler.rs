@@ -315,6 +315,9 @@ impl Game<'_> {
         if self.pending_save.is_some() {
             return;
         }
+        // Android: what the activity's views delivered (the keyboard's text, a mouse).
+        #[cfg(target_os = "android")]
+        self.android_poll(event_loop);
         horizon_client::spans::time("pads", || self.poll_pads(event_loop));
         self.settle_after_run(event_loop);
         self.pause_if_inactive();
@@ -362,6 +365,9 @@ impl Game<'_> {
 impl ApplicationHandler for Game<'_> {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         if self.window.is_some() {
+            // Android: the activity is back, with a new surface for the window it had.
+            #[cfg(target_os = "android")]
+            self.android_resumed(event_loop);
             return;
         }
         debug_keys::warm_debug_cpu();
@@ -421,7 +427,18 @@ impl ApplicationHandler for Game<'_> {
         self.apply_settings();
         self.previous = Instant::now();
     }
+    /// Android stops the activity and takes its window (docs/android-port.md); no other system
+    /// suspends a game.
+    fn suspended(&mut self, _event_loop: &ActiveEventLoop) {
+        #[cfg(target_os = "android")]
+        self.android_suspended();
+    }
     fn window_event(&mut self, event_loop: &ActiveEventLoop, id: WindowId, event: WindowEvent) {
+        // Android: fingers and the Back button, before the game's own handling.
+        #[cfg(target_os = "android")]
+        let Some(event) = self.android_window_event(event_loop, id, event) else {
+            return;
+        };
         let key = if self.window.as_ref().is_some_and(|w| w.id() == id)
             && !self.scripted_run()
             && !self.unclaimed_window

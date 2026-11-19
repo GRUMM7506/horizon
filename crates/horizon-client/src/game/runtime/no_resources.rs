@@ -100,7 +100,13 @@ impl Missing {
 
 impl ApplicationHandler for Missing {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        if self.window.is_some() {
+        if let Some(_window) = &self.window {
+            // Android: the activity is back, with a new surface for the window it had.
+            #[cfg(target_os = "android")]
+            if let Err(e) = android_input::window_back(self.renderer.as_mut(), _window) {
+                self.error = Some(e);
+                event_loop.exit();
+            }
             return;
         }
         let attributes =
@@ -135,11 +141,26 @@ impl ApplicationHandler for Missing {
         }
     }
 
+    /// Android stops the activity and takes its window (docs/android-port.md).
+    fn suspended(&mut self, _event_loop: &ActiveEventLoop) {
+        #[cfg(target_os = "android")]
+        android_input::window_lost(self.renderer.as_mut());
+    }
+
     fn window_event(&mut self, event_loop: &ActiveEventLoop, id: WindowId, event: WindowEvent) {
         let Some(window) = self.window.clone().filter(|w| w.id() == id) else {
             return;
         };
         match event {
+            // Android: a tap is a click where it lifts.
+            #[cfg(target_os = "android")]
+            WindowEvent::Touch(touch) => {
+                self.pointer = (touch.location.x, touch.location.y);
+                if touch.phase == winit::event::TouchPhase::Ended {
+                    self.click(event_loop);
+                }
+                window.request_redraw();
+            }
             WindowEvent::CloseRequested => event_loop.exit(),
             WindowEvent::Resized(size) => {
                 if let Some(r) = &mut self.renderer {

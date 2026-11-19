@@ -90,8 +90,21 @@ impl Loading {
             || self.menu.pending.is_some()
             || self.ui_at.is_none_or(|at| at.elapsed() >= TITLE_FRAME_WAIT)
     }
+    /// Android: the window's surface in pixels, for a finger's place on the menu.
+    #[cfg(target_os = "android")]
+    fn surface_size(&self) -> [u32; 2] {
+        self.renderer.as_ref().map_or([1280, 720], |r| {
+            [r.config.width.max(1), r.config.height.max(1)]
+        })
+    }
     pub(super) fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        if self.window.is_some() {
+        if let Some(_window) = &self.window {
+            // Android: the activity is back, with a new surface for the window it had.
+            #[cfg(target_os = "android")]
+            if let Err(e) = android_input::window_back(self.renderer.as_mut(), _window) {
+                self.error = Some(e);
+                event_loop.exit();
+            }
             return;
         }
         // The Window constructor: created fullscreen when options.txt or --fullscreen says so.
@@ -197,6 +210,19 @@ impl Loading {
         if self.window.as_ref().is_none_or(|w| w.id() != id) {
             return;
         }
+        // Android: a finger is the menu's mouse, and Back its Escape (docs/android-port.md).
+        #[cfg(target_os = "android")]
+        {
+            if let WindowEvent::Touch(touch) = event {
+                let size = self.surface_size();
+                let scale = HudBatch::new(size, self.settings.gui_scale_inputs()).scale;
+                for event in android_input::menu_touch(touch, size, scale) {
+                    self.window_event(event_loop, id, event);
+                }
+                return;
+            }
+            android_input::back_is_escape(&mut event);
+        }
         follow_keymap(&mut event);
         if let Err(error) = self.menu_event(event_loop, event) {
             self.error = Some(error);
@@ -269,6 +295,14 @@ impl Loading {
             return;
         }
         self.poll_menu_realms(event_loop);
+        // Android: a finger held still on the menu presses.
+        #[cfg(target_os = "android")]
+        if let Some(id) = self.window.as_ref().map(|w| w.id()) {
+            let scale = HudBatch::new(self.surface_size(), self.settings.gui_scale_inputs()).scale;
+            for event in android_input::menu_touch_poll(scale) {
+                self.window_event(event_loop, id, event);
+            }
+        }
         if let Some(w) = &self.window {
             if self.options.as_ref().is_some_and(|o| o.offscreen) {
                 self.draw();
@@ -435,6 +469,14 @@ impl ApplicationHandler for App {
         match self {
             App::Loading(loading) => loading.resumed(event_loop),
             App::Ready(game) => game.resumed(event_loop),
+        }
+    }
+    /// Android stops the activity and takes its window (docs/android-port.md).
+    fn suspended(&mut self, _event_loop: &ActiveEventLoop) {
+        #[cfg(target_os = "android")]
+        match self {
+            App::Loading(loading) => android_input::window_lost(loading.renderer.as_mut()),
+            App::Ready(game) => game.suspended(_event_loop),
         }
     }
     fn window_event(&mut self, event_loop: &ActiveEventLoop, id: WindowId, event: WindowEvent) {
