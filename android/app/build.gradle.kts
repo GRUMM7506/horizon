@@ -59,7 +59,7 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.9.3")
     implementation("androidx.core:core-ktx:1.13.1")
     // The Java half of android-activity 0.6's GameActivity glue, which the game's library links.
-    implementation("androidx.games:games-activity:4.0.0")
+    implementation("androidx.games:games-activity:4.4.0")
 }
 
 val checkGameLibrary by tasks.registering {
