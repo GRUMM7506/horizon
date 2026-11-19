@@ -42,8 +42,13 @@ game_log() {
 }
 
 echo "== Starting the emulator"
+# One folder for both tools: avdmanager would follow XDG_CONFIG_HOME where it is set, and the
+# emulator would not find the device there.
+export ANDROID_AVD_HOME=${ANDROID_AVD_HOME:-$HOME/.android/avd}
+mkdir -p "$ANDROID_AVD_HOME"
 echo no | "$sdk/cmdline-tools/latest/bin/avdmanager" create avd --force --name horizon-smoke \
-    --package "$image" --device pixel_5 > /dev/null
+    --package "$image" --device pixel_5 || { echo "FAILED: the emulator's device was not made"; exit 1; }
+"$sdk/emulator/emulator" -list-avds
 "$sdk/emulator/emulator" -avd horizon-smoke -no-window -no-audio -no-boot-anim -no-snapshot \
     -gpu swiftshader_indirect -memory 4096 -cores 2 > "$out/emulator.log" 2>&1 &
 emulator=$!
