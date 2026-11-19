@@ -160,6 +160,8 @@ pub(super) fn window_back(renderer: Option<&mut Renderer>, window: &Window) -> R
     if let Some(renderer) = renderer {
         renderer.window_restored(size.width, size.height)?;
     }
+    // A screen that only draws when asked (the missing-resources one) is asked.
+    window.request_redraw();
     log::info!(
         "Horizon: the activity is back, a new surface of {}x{}",
         size.width,
