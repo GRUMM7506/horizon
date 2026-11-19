@@ -26,7 +26,8 @@ horizon-prepare для Android-порта Horizon
 Если Horizon уже установлен на этом компьютере через его лаунчер, файлы игры можно не искать:
 скопируйте папку .local\minecraft из установленной версии
 (C:\Users\ИМЯ\AppData\Roaming\horizon-launcher\versions\ВЕРСИЯ\.local\minecraft) в папку .local
-рядом с этой программой и запустите .\horizon-prepare.exe --prepare --complete без других ключей.
+рядом с этой программой: тогда --server-jar не нужен. Ключ --minecraft-dir для другого лаунчера
+остаётся: из его папки берутся звуки.
 
 Подготовка идёт несколько минут. Проверить результат: .\horizon-prepare.exe --check
 
